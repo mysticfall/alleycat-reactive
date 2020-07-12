@@ -1,6 +1,8 @@
 import dis
 
 
+# Code copied from https://stackoverflow.com/a/41586688/3793909.
+
 def take1(iterator):
     try:
         return next(iterator)
