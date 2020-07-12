@@ -48,6 +48,29 @@ def get_property_reference(frame: FrameType) -> Optional[Tuple[any, str]]:
     return None
 
 
+def get_object_to_extend(frame: FrameType) -> Optional[Tuple[any, str]]:
+    try:
+        stack = dis.get_instructions(frame.f_code)
+
+        stack = dropwhile(lambda i: not i.opname.startswith("SETUP_ANNOTATIONS"), stack)
+        stack = dropwhile(lambda i: not i.opname.startswith("LOAD_NAME") or i.argval != "extend", stack)
+        stack = dropwhile(lambda i: i.argval == "extend", stack)
+
+        variable = next(takewhile(lambda i: i.opname == "LOAD_NAME", stack))
+        attr = next(takewhile(lambda i: i.opname == "LOAD_ATTR", stack))
+
+        if variable is None or attr is None:
+            return None
+
+        obj = frame.f_globals.get(variable.argval)
+
+        return (obj, attr.argval) if obj is not None else None
+    except StopIteration:
+        pass
+
+    return None
+
+
 def get_instructions(frame: FrameType) -> Iterable[dis.Instruction]:
     try:
         return dropwhile(lambda i: i.offset != frame.f_lasti, dis.get_instructions(frame.f_code))

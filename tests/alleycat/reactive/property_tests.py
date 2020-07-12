@@ -2,7 +2,7 @@ import unittest
 
 from rx import operators as ops
 
-from alleycat.reactive import ReactiveObject, ReactiveProperty, observe
+from alleycat.reactive import ReactiveObject, ReactiveProperty, observe, extend
 
 
 class ReactivePropertyTestCase(unittest.TestCase):
@@ -70,9 +70,9 @@ class Fixture(ReactiveObject):
 
 
 class ExtendedFixture(Fixture):
-    value: int = Fixture.extend("value",
-                                lambda obj, v: v + obj.increment,
-                                lambda obj, obs: obs.pipe(ops.map(lambda v: v * obj.multiplier)))
+    value: int = extend(Fixture.value,
+                        pre_modifier=lambda obj, v: v + obj.increment,
+                        post_modifier=lambda obj, obs: obs.pipe(ops.map(lambda v: v * obj.multiplier)))
 
     def __init__(self, init_value=0, increment=0, multiplier=1):
         self.increment = increment

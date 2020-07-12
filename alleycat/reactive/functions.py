@@ -22,8 +22,17 @@ def observe(obj, name: str = None) -> Observable:
     return getattr(target, ReactiveProperty.KEY)[key].observable
 
 
-def extend(cls, name: str, pre_modifier: PreModifier = None, post_modifier: PostModifier = None) -> ReactiveProperty[T]:
-    parent: ReactiveProperty = getattr(cls, name)
+def extend(
+        obj,
+        name: str = None,
+        pre_modifier: PreModifier = None,
+        post_modifier: PostModifier = None) -> ReactiveProperty[T]:
+    if name is None:
+        (target, key) = dis.get_object_to_extend(inspect.currentframe().f_back)
+    else:
+        (target, key) = (obj, name)
+
+    parent: ReactiveProperty = getattr(target, key)
 
     return ReactiveProperty(
         read_only=parent.read_only, parent=parent, pre_modifier=pre_modifier, post_modifier=post_modifier)
