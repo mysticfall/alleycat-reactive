@@ -2,8 +2,7 @@ from typing import TypeVar
 
 from rx.core.typing import Disposable, Observable
 
-import alleycat
-from alleycat.reactive import observe, extend, ReactiveProperty, PreModifier, PostModifier
+from alleycat.reactive import observe, extend, ReactiveProperty, PreModifier, PostModifier, dispose
 
 T = TypeVar("T")
 
@@ -22,7 +21,7 @@ class ReactiveObject(Disposable):
         return observe(self, name)
 
     def dispose(self) -> None:
-        alleycat.reactive.dispose(self)
+        dispose(self)
 
     def __enter__(self):
         return self
