@@ -20,6 +20,7 @@ class ReactiveProperty(Generic[T]):
     def __init__(self,
                  init_value: T = None,
                  read_only=False,
+                 name: str = None,
                  parent=None,
                  pre_modifier: PreModifier = None,
                  post_modifier: PostModifier = None):
@@ -27,7 +28,7 @@ class ReactiveProperty(Generic[T]):
         self.init_value = init_value
 
         if parent is None:
-            self.name = dis.get_assigned_name(inspect.currentframe().f_back)
+            self.name = name if name is not None else dis.get_assigned_name(inspect.currentframe().f_back)
             self.read_only = read_only
             self.pre_mod_chain = deque()
             self.post_mod_chain = deque()
