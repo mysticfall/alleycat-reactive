@@ -1,31 +1,33 @@
 import dis
+from itertools import dropwhile, takewhile
 
 from types import FrameType
-from typing import Optional
+from typing import Optional, Iterable
 
 
 def get_assigned_name(frame: FrameType) -> Optional[str]:
-    inst = get_instruction(frame)
+    try:
+        stack = get_instructions(frame)
 
-    if inst is not None and inst.opname == "STORE_NAME":
-        return inst.argval
+        stack = dropwhile(lambda i: i.opname.startswith("CALL_"), stack)
+        stack = takewhile(lambda i: i.opname == "STORE_NAME", stack)
 
-    return None
+        inst = next(stack)
 
-
-def get_instruction(frame: FrameType) -> Optional[dis.Instruction]:
-    it = iter(dis.get_instructions(frame.f_code))
-
-    for ins in it:
-        if ins.offset == frame.f_lasti:
-            break
-    else:
-        return None
-
-    if ins.opname.startswith("CALL_"):
-        try:
-            return next(it)
-        except StopIteration:
-            pass
+        return inst.argval if inst is not None else None
+    except StopIteration:
+        pass
 
     return None
+
+
+def get_instructions(frame: FrameType) -> Iterable[dis.Instruction]:
+    try:
+        return dropwhile(lambda i: i.offset != frame.f_lasti, dis.get_instructions(frame.f_code))
+    except StopIteration:
+        return []
+
+
+def dump_instructions(frame: FrameType) -> None:
+    for ins in iter(dis.get_instructions(frame.f_code)):
+        print(ins)
