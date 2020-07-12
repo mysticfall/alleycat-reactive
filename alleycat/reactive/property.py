@@ -11,7 +11,7 @@ from rx.subject import BehaviorSubject
 from . import PreModifier, PostModifier
 from . import dis
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class ReactiveProperty(Generic[T]):
