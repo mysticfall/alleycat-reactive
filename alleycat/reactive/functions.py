@@ -1,18 +1,25 @@
+import inspect
 from typing import TypeVar
 
 from rx import Observable
 
 from . import PreModifier, PostModifier
+from . import dis
 from .property import ReactiveProperty
 
 T = TypeVar("T")
 
 
-def observe(obj, name: str) -> Observable:
-    if obj is None or not hasattr(obj, ReactiveProperty.KEY):
-        raise AttributeError(f"Unknown property name: '{name}'.")
+def observe(obj, name: str = None) -> Observable:
+    if name is None:
+        (target, key) = dis.get_property_reference(inspect.currentframe().f_back)
+    else:
+        (target, key) = (obj, name)
 
-    return getattr(obj, ReactiveProperty.KEY)[name].observable
+    if target is None or not hasattr(target, ReactiveProperty.KEY):
+        raise AttributeError(f"Unknown property name: '{key}'.")
+
+    return getattr(target, ReactiveProperty.KEY)[key].observable
 
 
 def extend(cls, name: str, pre_modifier: PreModifier = None, post_modifier: PostModifier = None) -> ReactiveProperty[T]:

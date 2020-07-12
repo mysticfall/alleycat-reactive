@@ -2,7 +2,7 @@ import unittest
 
 from rx import operators as ops
 
-from alleycat.reactive import ReactiveObject, ReactiveProperty
+from alleycat.reactive import ReactiveObject, ReactiveProperty, observe
 
 
 class ReactivePropertyTestCase(unittest.TestCase):
@@ -26,7 +26,7 @@ class ReactivePropertyTestCase(unittest.TestCase):
 
     def test_observe(self):
         with Fixture(init_value=10) as obj:
-            observable = obj.observe("value")
+            observable = observe(obj.value)
 
             self.assertIsNotNone(observable)
 
@@ -44,7 +44,7 @@ class ReactivePropertyTestCase(unittest.TestCase):
 
     def test_extend(self):
         with ExtendedFixture(increment=5, multiplier=2) as obj:
-            observable = obj.observe("value")
+            observable = observe(obj.value)
 
             self.assertIsNotNone(observable)
 

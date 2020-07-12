@@ -2,19 +2,46 @@ import dis
 from itertools import dropwhile, takewhile
 
 from types import FrameType
-from typing import Optional, Iterable
+from typing import Optional, Iterable, Tuple
 
 
 def get_assigned_name(frame: FrameType) -> Optional[str]:
     try:
-        stack = get_instructions(frame)
+        stack = dis.get_instructions(frame.f_code)
 
+        stack = dropwhile(lambda i: i.offset != frame.f_lasti, dis.get_instructions(frame.f_code))
         stack = dropwhile(lambda i: i.opname.startswith("CALL_"), stack)
         stack = takewhile(lambda i: i.opname == "STORE_NAME", stack)
 
         inst = next(stack)
 
         return inst.argval if inst is not None else None
+    except StopIteration:
+        pass
+
+    return None
+
+
+def get_property_reference(frame: FrameType) -> Optional[Tuple[any, str]]:
+    try:
+        stack = dis.get_instructions(frame.f_code)
+
+        stack = dropwhile(lambda i: not i.opname.startswith("CALL_"), stack)
+        stack = dropwhile(lambda i: i.opname.startswith("CALL_"), stack)
+        stack = dropwhile(lambda i: i.opname != "LOAD_FAST", stack)
+
+        variable = next(stack)
+
+        stack = takewhile(lambda i: i.opname == "LOAD_ATTR", stack)
+
+        attr = next(stack)
+
+        if variable is None or attr is None:
+            return None
+
+        obj = frame.f_locals.get(variable.argval)
+
+        return (obj, attr.argval) if obj is not None else None
     except StopIteration:
         pass
 
