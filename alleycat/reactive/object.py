@@ -1,6 +1,7 @@
 from typing import TypeVar
 
-from rx.core.typing import Disposable, Observable
+from rx import Observable
+from rx.core.typing import Disposable
 
 from alleycat.reactive import observe, extend, ReactiveProperty, PreModifier, PostModifier, dispose
 

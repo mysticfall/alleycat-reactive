@@ -1,6 +1,6 @@
 from typing import TypeVar
 
-from rx.core.typing import Observable
+from rx import Observable
 
 from . import PreModifier, PostModifier
 from .property import ReactiveProperty
