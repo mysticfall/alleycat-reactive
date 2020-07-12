@@ -1,6 +1,7 @@
 import inspect
 from typing import TypeVar
 
+from returns.maybe import Maybe
 from rx import Observable
 
 from . import PreModifier, PostModifier
@@ -11,12 +12,12 @@ T = TypeVar("T")
 
 
 def observe(obj, name: str = None) -> Observable:
-    if name is None:
-        (target, key) = dis.get_property_reference(inspect.currentframe().f_back)
-    else:
-        (target, key) = (obj, name)
+    (target, key) = Maybe \
+        .from_value(name) \
+        .map(lambda n: (obj, n)) \
+        .value_or(dis.get_property_reference(inspect.currentframe().f_back).unwrap())
 
-    if target is None or not hasattr(target, ReactiveProperty.KEY):
+    if not hasattr(target, ReactiveProperty.KEY):
         raise AttributeError(f"Unknown property name: '{key}'.")
 
     return getattr(target, ReactiveProperty.KEY)[key].observable
@@ -27,10 +28,10 @@ def extend(
         name: str = None,
         pre_modifier: PreModifier = None,
         post_modifier: PostModifier = None) -> ReactiveProperty[T]:
-    if name is None:
-        (target, key) = dis.get_object_to_extend(inspect.currentframe().f_back)
-    else:
-        (target, key) = (obj, name)
+    (target, key) = Maybe \
+        .from_value(name) \
+        .map(lambda n: (obj, n)) \
+        .value_or(dis.get_object_to_extend(inspect.currentframe().f_back).unwrap())
 
     parent: ReactiveProperty = getattr(target, key)
 

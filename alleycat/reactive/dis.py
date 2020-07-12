@@ -1,74 +1,70 @@
 import dis
 from itertools import dropwhile, takewhile
-
 from types import FrameType
-from typing import Optional, Iterable, Tuple
+from typing import Iterable, Tuple
+
+from returns.maybe import Maybe, Nothing
+from returns.pipeline import flow
 
 
-def get_assigned_name(frame: FrameType) -> Optional[str]:
+def get_assigned_name(frame: FrameType) -> Maybe[str]:
     try:
-        stack = dis.get_instructions(frame.f_code)
+        inst = flow(
+            dis.get_instructions(frame.f_code),
+            lambda s: dropwhile(lambda i: i.offset != frame.f_lasti, s),
+            lambda s: dropwhile(lambda i: i.opname.startswith("CALL_"), s),
+            lambda s: takewhile(lambda i: i.opname == "STORE_NAME", s),
+            lambda s: next(s))
 
-        stack = dropwhile(lambda i: i.offset != frame.f_lasti, dis.get_instructions(frame.f_code))
-        stack = dropwhile(lambda i: i.opname.startswith("CALL_"), stack)
-        stack = takewhile(lambda i: i.opname == "STORE_NAME", stack)
-
-        inst = next(stack)
-
-        return inst.argval if inst is not None else None
+        return Maybe.from_value(inst).map(lambda i: i.argval)
     except StopIteration:
         pass
 
-    return None
+    return Nothing
 
 
-def get_property_reference(frame: FrameType) -> Optional[Tuple[any, str]]:
+def get_property_reference(frame: FrameType) -> Maybe[Tuple[any, str]]:
     try:
-        stack = dis.get_instructions(frame.f_code)
+        stack = flow(
+            dis.get_instructions(frame.f_code),
+            lambda s: dropwhile(lambda i: not i.opname.startswith("CALL_"), s),
+            lambda s: dropwhile(lambda i: not i.opname.startswith("CALL_"), s),
+            lambda s: dropwhile(lambda i: i.opname.startswith("CALL_"), s),
+            lambda s: dropwhile(lambda i: i.opname != "LOAD_FAST", s))
 
-        stack = dropwhile(lambda i: not i.opname.startswith("CALL_"), stack)
-        stack = dropwhile(lambda i: i.opname.startswith("CALL_"), stack)
-        stack = dropwhile(lambda i: i.opname != "LOAD_FAST", stack)
-
-        variable = next(stack)
+        variable = Maybe.from_value(next(stack)).map(lambda v: v.argval)
 
         stack = takewhile(lambda i: i.opname == "LOAD_ATTR", stack)
 
-        attr = next(stack)
+        attr = Maybe.from_value(next(stack)).map(lambda a: a.argval)
 
-        if variable is None or attr is None:
-            return None
-
-        obj = frame.f_locals.get(variable.argval)
-
-        return (obj, attr.argval) if obj is not None else None
+        return variable.bind(lambda v: attr.map(lambda a: (frame.f_locals.get(v), a)))
     except StopIteration:
         pass
 
-    return None
+    return Nothing
 
 
-def get_object_to_extend(frame: FrameType) -> Optional[Tuple[any, str]]:
+def get_object_to_extend(frame: FrameType) -> Maybe[Tuple[any, str]]:
     try:
-        stack = dis.get_instructions(frame.f_code)
+        stack = flow(
+            dis.get_instructions(frame.f_code),
+            lambda s: dropwhile(lambda i: not i.opname.startswith("SETUP_ANNOTATIONS"), s),
+            lambda s: dropwhile(lambda i: not i.opname.startswith("LOAD_NAME") or i.argval != "extend", s),
+            lambda s: dropwhile(lambda i: i.argval == "extend", s))
 
-        stack = dropwhile(lambda i: not i.opname.startswith("SETUP_ANNOTATIONS"), stack)
-        stack = dropwhile(lambda i: not i.opname.startswith("LOAD_NAME") or i.argval != "extend", stack)
-        stack = dropwhile(lambda i: i.argval == "extend", stack)
+        variable = Maybe \
+            .from_value(next(takewhile(lambda i: i.opname == "LOAD_NAME", stack))) \
+            .map(lambda v: v.argval)
 
-        variable = next(takewhile(lambda i: i.opname == "LOAD_NAME", stack))
-        attr = next(takewhile(lambda i: i.opname == "LOAD_ATTR", stack))
+        attr = Maybe.from_value(next(takewhile(lambda i: i.opname == "LOAD_ATTR", stack))) \
+            .map(lambda v: v.argval)
 
-        if variable is None or attr is None:
-            return None
-
-        obj = frame.f_globals.get(variable.argval)
-
-        return (obj, attr.argval) if obj is not None else None
+        return variable.bind(lambda v: attr.map(lambda a: (frame.f_globals.get(v), a)))
     except StopIteration:
         pass
 
-    return None
+    return Nothing
 
 
 def get_instructions(frame: FrameType) -> Iterable[dis.Instruction]:

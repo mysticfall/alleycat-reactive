@@ -4,6 +4,7 @@ from collections import deque
 from functools import reduce, partial
 from typing import TypeVar, Generic, Callable
 
+from returns.maybe import Maybe
 from rx import Observable
 from rx.core.typing import Disposable
 from rx.subject import BehaviorSubject
@@ -28,7 +29,7 @@ class ReactiveProperty(Generic[T]):
         self.init_value = init_value
 
         if parent is None:
-            self.name = name if name is not None else dis.get_assigned_name(inspect.currentframe().f_back)
+            self.name = Maybe.from_value(name).value_or(dis.get_assigned_name(inspect.currentframe().f_back).unwrap())
             self.read_only = read_only
             self.pre_mod_chain = deque()
             self.post_mod_chain = deque()
