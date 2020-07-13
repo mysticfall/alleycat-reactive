@@ -1,8 +1,7 @@
-import dis
 import inspect
 from collections import deque
 from functools import reduce, partial
-from typing import TypeVar, Generic, Callable
+from typing import TypeVar, Generic, Callable, Optional, Union, Deque
 
 from returns.maybe import Maybe
 from rx import Observable
@@ -10,7 +9,7 @@ from rx.core.typing import Disposable
 from rx.subject import BehaviorSubject
 
 from . import PreModifier, PostModifier
-from . import dis
+from . import utils
 
 T = TypeVar("T")
 
@@ -18,18 +17,22 @@ T = TypeVar("T")
 class ReactiveProperty(Generic[T]):
     KEY = "_ro_property"
 
+    pre_mod_chain: Deque[PreModifier]
+
+    post_mod_chain: Deque[PostModifier]
+
     def __init__(self,
-                 init_value: T = None,
+                 init_value: Optional[T] = None,
                  read_only=False,
-                 name: str = None,
-                 parent=None,
-                 pre_modifier: PreModifier = None,
-                 post_modifier: PostModifier = None):
+                 name: Optional[str] = None,
+                 parent: Optional["ReactiveProperty[T]"] = None,
+                 pre_modifier: Optional[PreModifier] = None,
+                 post_modifier: Optional[PostModifier] = None):
 
         self.init_value = init_value
 
         if parent is None:
-            self.name = Maybe.from_value(name).value_or(dis.get_assigned_name(inspect.currentframe().f_back).unwrap())
+            self.name = Maybe.from_value(name).value_or(utils.get_assigned_name(inspect.currentframe().f_back).unwrap())
             self.read_only = read_only
             self.pre_mod_chain = deque()
             self.post_mod_chain = deque()
@@ -46,8 +49,6 @@ class ReactiveProperty(Generic[T]):
             self.post_mod_chain.appendleft(post_modifier)
 
     class ReactiveData(Disposable):
-
-        value: T
 
         observable: Observable
 
@@ -67,18 +68,18 @@ class ReactiveProperty(Generic[T]):
             self._dispose_token = self.observable.subscribe(update, lambda x: print(x))
 
         @property
-        def value(self):
+        def value(self) -> T:
             return self._value
 
         @value.setter
-        def value(self, value):
+        def value(self, value: T):
             self._subject.on_next(self._modifier(value))
 
         def dispose(self) -> None:
             self._subject.on_completed()
             self._dispose_token.dispose()
 
-    def _get_data(self, obj, init_value: T = None) -> ReactiveData:
+    def _get_data(self, obj, init_value: Optional[T] = None) -> ReactiveData:
         assert obj is not None
 
         if hasattr(obj, self.KEY):
@@ -105,7 +106,7 @@ class ReactiveProperty(Generic[T]):
 
         raise AttributeError("The property has not been properly initialized.")
 
-    def __get__(self, obj, obj_type=None) -> T:
+    def __get__(self, obj, obj_type=None) -> Union[T, "ReactiveProperty[T]"]:
         if obj is None:
             return self
 

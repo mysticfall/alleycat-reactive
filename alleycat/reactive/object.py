@@ -1,4 +1,4 @@
-from typing import TypeVar
+from typing import TypeVar, Optional
 
 from rx import Observable
 from rx.core.typing import Disposable
@@ -14,8 +14,8 @@ class ReactiveObject(Disposable):
     def extend(
             cls,
             name: str,
-            pre_modifier: PreModifier = None,
-            post_modifier: PostModifier = None) -> ReactiveProperty[T]:
+            pre_modifier: Optional[PreModifier] = None,
+            post_modifier: Optional[PostModifier] = None) -> ReactiveProperty[T]:
         return extend(cls, name, pre_modifier, post_modifier)
 
     def observe(self, name: str) -> Observable:

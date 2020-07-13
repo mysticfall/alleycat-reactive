@@ -1,13 +1,13 @@
-from typing import Callable, TypeVar
+from typing import Callable, TypeVar, Any
 
 from rx import Observable
 
 T = TypeVar("T")
 
-PreModifier = Callable[[any, T], T]
-PostModifier = Callable[[any, Observable], Observable]
+PreModifier = Callable[[Any, T], T]
+PostModifier = Callable[[Any, Observable], Observable]
 
 # Import order should not be changed to avoid a circular dependency.
-from .property import ReactiveProperty
-from .functions import dispose, extend, observe
-from .object import ReactiveObject
+from .property import ReactiveProperty as ReactiveProperty
+from .functions import dispose as dispose, extend as extend, observe as observe
+from .object import ReactiveObject as ReactiveObject

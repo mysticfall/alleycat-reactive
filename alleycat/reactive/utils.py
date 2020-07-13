@@ -1,7 +1,7 @@
 import dis
 from itertools import dropwhile, takewhile
 from types import FrameType
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, Any
 
 from returns.maybe import Maybe, Nothing
 from returns.pipeline import flow
@@ -16,14 +16,14 @@ def get_assigned_name(frame: FrameType) -> Maybe[str]:
             lambda s: takewhile(lambda i: i.opname == "STORE_NAME", s),
             lambda s: next(s))
 
-        return Maybe.from_value(inst).map(lambda i: i.argval)
+        return Maybe.from_value(inst).map(lambda i: str(i.argval))
     except StopIteration:
         pass
 
     return Nothing
 
 
-def get_property_reference(frame: FrameType) -> Maybe[Tuple[any, str]]:
+def get_property_reference(frame: FrameType) -> Maybe[Tuple[Any, str]]:
     try:
         stack = flow(
             dis.get_instructions(frame.f_code),
@@ -32,11 +32,11 @@ def get_property_reference(frame: FrameType) -> Maybe[Tuple[any, str]]:
             lambda s: dropwhile(lambda i: i.opname.startswith("CALL_"), s),
             lambda s: dropwhile(lambda i: i.opname != "LOAD_FAST", s))
 
-        variable = Maybe.from_value(next(stack)).map(lambda v: v.argval)
+        variable = Maybe.from_value(next(stack)).map(lambda v: str(v.argval))
 
         stack = takewhile(lambda i: i.opname == "LOAD_ATTR", stack)
 
-        attr = Maybe.from_value(next(stack)).map(lambda a: a.argval)
+        attr = Maybe.from_value(next(stack)).map(lambda a: str(a.argval))
 
         return variable.bind(lambda v: attr.map(lambda a: (frame.f_locals.get(v), a)))
     except StopIteration:
@@ -45,7 +45,7 @@ def get_property_reference(frame: FrameType) -> Maybe[Tuple[any, str]]:
     return Nothing
 
 
-def get_object_to_extend(frame: FrameType) -> Maybe[Tuple[any, str]]:
+def get_object_to_extend(frame: FrameType) -> Maybe[Tuple[Any, str]]:
     try:
         stack = flow(
             dis.get_instructions(frame.f_code),
@@ -55,10 +55,10 @@ def get_object_to_extend(frame: FrameType) -> Maybe[Tuple[any, str]]:
 
         variable = Maybe \
             .from_value(next(takewhile(lambda i: i.opname == "LOAD_NAME", stack))) \
-            .map(lambda v: v.argval)
+            .map(lambda v: str(v.argval))
 
         attr = Maybe.from_value(next(takewhile(lambda i: i.opname == "LOAD_ATTR", stack))) \
-            .map(lambda v: v.argval)
+            .map(lambda v: str(v.argval))
 
         return variable.bind(lambda v: attr.map(lambda a: (frame.f_globals.get(v), a)))
     except StopIteration:
