@@ -1,5 +1,3 @@
-import inspect
-from types import FrameType
 from typing import TypeVar, Optional
 
 from returns.maybe import Maybe
@@ -16,7 +14,7 @@ def observe(obj, name: Optional[str] = None) -> Observable:
     (target, key) = Maybe \
         .from_value(name) \
         .map(lambda n: (obj, n)) \
-        .value_or(utils.get_property_reference(inspect.currentframe().f_back).unwrap())
+        .value_or(utils.find_or_require_name(3, utils.get_property_reference))
 
     if not hasattr(target, ReactiveProperty.KEY):
         raise AttributeError(f"Unknown property name: '{key}'.")
@@ -32,7 +30,7 @@ def extend(
     (target, key) = Maybe \
         .from_value(name) \
         .map(lambda n: (obj, n)) \
-        .value_or(utils.get_object_to_extend(inspect.currentframe().f_back).unwrap())
+        .value_or(utils.find_or_require_name(3, utils.get_object_to_extend))
 
     parent: ReactiveProperty = getattr(target, key)
 
