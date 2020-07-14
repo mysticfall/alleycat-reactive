@@ -1,6 +1,6 @@
 from collections import deque
 from functools import reduce, partial
-from typing import TypeVar, Generic, Callable, Optional, Union, Deque, Any
+from typing import TypeVar, Generic, Callable, Optional, Union, Deque
 
 from returns.maybe import Maybe
 from rx import Observable
@@ -12,7 +12,6 @@ from . import utils
 
 T = TypeVar("T")
 U = TypeVar("U")
-V = TypeVar("V")
 
 
 class ReactiveProperty(Generic[T]):
@@ -93,12 +92,15 @@ class ReactiveProperty(Generic[T]):
             def identity(_, x):
                 return x
 
-            def build_chain(chain: Deque[Callable[[Any, V], V]]) -> Callable[[V], V]:
+            # FIXME Annotating the following method will crash PyCharm's type checker (See PY-43455).
+            # The signature should be 'def build_chain(chain: Deque[Callable[[Any, U], U]]) -> Callable[[U], U]'.
+            def build_chain(chain):
                 return partial(reduce(compose, chain, identity), obj)
 
-            pre_chain = build_chain(self.pre_mod_chain)
-            post_chain = build_chain(self.post_mod_chain)
+            pre_chain = build_chain(self.pre_mod_chain)  # type: ignore
+            post_chain = build_chain(self.post_mod_chain)  # type: ignore
 
+            # noinspection PyTypeChecker
             data = self.ReactiveData(init_value, pre_chain, post_chain)
 
             setattr(obj, self.KEY, {self.name: data})
