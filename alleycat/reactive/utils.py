@@ -14,7 +14,7 @@ def get_current_frame(depth: int) -> Maybe[FrameType]:
     def move_up(frame: Maybe[FrameType]) -> Maybe[FrameType]:
         return frame.bind(lambda f: Maybe.from_value(f.f_back))
 
-    return flow(Maybe.from_value(inspect.currentframe()), *[move_up for _ in range(depth)])
+    return flow(Maybe.from_value(inspect.currentframe()), *[move_up for _ in range(depth)])  # type:ignore
 
 
 def get_assigned_name(frame: FrameType) -> Maybe[str]:
