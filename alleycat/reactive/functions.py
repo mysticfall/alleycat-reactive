@@ -14,7 +14,7 @@ def observe(obj, name: Optional[str] = None) -> Observable:
     (target, key) = Maybe \
         .from_value(name) \
         .map(lambda n: (obj, n)) \
-        .value_or(utils.find_or_require_name(3, utils.get_property_reference))
+        .value_or(utils.infer_or_require_name(3, utils.get_property_reference))
 
     if not hasattr(target, ReactiveProperty.KEY):
         raise AttributeError(f"Unknown property name: '{key}'.")
@@ -30,7 +30,7 @@ def extend(
     (target, key) = Maybe \
         .from_value(name) \
         .map(lambda n: (obj, n)) \
-        .value_or(utils.find_or_require_name(3, utils.get_object_to_extend))
+        .value_or(utils.infer_or_require_name(3, utils.get_object_to_extend))
 
     parent: ReactiveProperty = getattr(target, key)
 

@@ -77,7 +77,7 @@ def get_object_to_extend(frame: FrameType) -> Maybe[Tuple[Any, str]]:
     return Nothing
 
 
-def find_or_require_name(depth: int, extractor: Callable[[FrameType], Maybe[T]]) -> T:
+def infer_or_require_name(depth: int, extractor: Callable[[FrameType], Maybe[T]]) -> T:
     value = get_current_frame(depth).bind(extractor).value_or(None)
 
     if value is None:
