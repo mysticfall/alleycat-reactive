@@ -1,6 +1,6 @@
 from collections import deque
 from functools import reduce, partial
-from typing import TypeVar, Generic, Callable, Optional, Union, Deque
+from typing import TypeVar, Generic, Callable, Optional, Union, Deque, Any
 
 from returns.maybe import Maybe
 from rx import Observable
@@ -11,6 +11,8 @@ from . import PreModifier, PostModifier
 from . import utils
 
 T = TypeVar("T")
+U = TypeVar("U")
+V = TypeVar("V")
 
 
 class ReactiveProperty(Generic[T]):
@@ -48,13 +50,13 @@ class ReactiveProperty(Generic[T]):
         if post_modifier is not None:
             self.post_mod_chain.appendleft(post_modifier)
 
-    class ReactiveData(Disposable):
+    class ReactiveData(Generic[U], Disposable):
 
         observable: Observable
 
         def __init__(self,
-                     init_value: T,
-                     pre_modifier: Callable[[T], T],
+                     init_value: U,
+                     pre_modifier: Callable[[U], U],
                      post_modifier: Callable[[Observable], Observable]):
             self._value = pre_modifier(init_value)
             self._subject = BehaviorSubject(self._value)
@@ -68,18 +70,18 @@ class ReactiveProperty(Generic[T]):
             self._dispose_token = self.observable.subscribe(update, lambda x: print(x))
 
         @property
-        def value(self) -> T:
+        def value(self) -> U:
             return self._value
 
         @value.setter
-        def value(self, value: T):
+        def value(self, value: U):
             self._subject.on_next(self._modifier(value))
 
         def dispose(self) -> None:
             self._subject.on_completed()
             self._dispose_token.dispose()
 
-    def _get_data(self, obj, init_value: Optional[T] = None) -> ReactiveData:
+    def _get_data(self, obj, init_value: Optional[T] = None) -> ReactiveData[T]:
         assert obj is not None
 
         if hasattr(obj, self.KEY):
@@ -91,13 +93,12 @@ class ReactiveProperty(Generic[T]):
             def identity(_, x):
                 return x
 
-            def build_chain(chain):
+            def build_chain(chain: Deque[Callable[[Any, V], V]]) -> Callable[[V], V]:
                 return partial(reduce(compose, chain, identity), obj)
 
             pre_chain = build_chain(self.pre_mod_chain)
             post_chain = build_chain(self.post_mod_chain)
 
-            # noinspection PyTypeChecker
             data = self.ReactiveData(init_value, pre_chain, post_chain)
 
             setattr(obj, self.KEY, {self.name: data})
