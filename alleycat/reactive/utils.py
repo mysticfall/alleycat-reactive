@@ -1,5 +1,6 @@
 import dis
 import inspect
+from dis import Instruction
 from itertools import dropwhile, takewhile
 from types import FrameType
 from typing import Iterable, Tuple, Any, TypeVar, Callable, Iterator
@@ -19,7 +20,7 @@ def get_current_frame(depth: int) -> Maybe[FrameType]:
 
 def get_assigned_name(frame: FrameType) -> Maybe[str]:
     try:
-        inst: dis.Instruction = flow(
+        inst: Instruction = flow(
             dis.get_instructions(frame.f_code),
             lambda s: dropwhile(lambda i: i.offset != frame.f_lasti, s),
             lambda s: dropwhile(lambda i: i.opname.startswith("CALL_"), s),
@@ -35,7 +36,7 @@ def get_assigned_name(frame: FrameType) -> Maybe[str]:
 
 def get_property_reference(frame: FrameType) -> Maybe[Tuple[Any, str]]:
     try:
-        stack: Iterator[dis.Instruction] = flow(
+        stack: Iterator[Instruction] = flow(
             dis.get_instructions(frame.f_code),
             lambda s: dropwhile(lambda i: not i.opname.startswith("CALL_"), s),
             lambda s: dropwhile(lambda i: not i.opname.startswith("CALL_"), s),
@@ -57,7 +58,7 @@ def get_property_reference(frame: FrameType) -> Maybe[Tuple[Any, str]]:
 
 def get_object_to_extend(frame: FrameType) -> Maybe[Tuple[Any, str]]:
     try:
-        stack: Iterator[dis.Instruction] = flow(
+        stack: Iterator[Instruction] = flow(
             dis.get_instructions(frame.f_code),
             lambda s: dropwhile(lambda i: not i.opname.startswith("SETUP_ANNOTATIONS"), s),
             lambda s: dropwhile(lambda i: not i.opname.startswith("LOAD_NAME") or i.argval != "extend", s),
