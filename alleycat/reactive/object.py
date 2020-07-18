@@ -10,6 +10,8 @@ T = TypeVar("T")
 
 class ReactiveObject(Disposable):
 
+    disposed = ReactiveProperty(False)
+
     @classmethod
     def extend(
             cls,
@@ -22,6 +24,8 @@ class ReactiveObject(Disposable):
         return observe(self, name)
 
     def dispose(self) -> None:
+        self.disposed = True
+
         dispose(self)
 
     def __enter__(self):
