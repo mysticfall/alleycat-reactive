@@ -99,6 +99,9 @@ class ReactiveProperty(Generic[T]):
 
         init_container = partial(initialize, obj, self.KEY, lambda: {})
 
+        def init_data(v: Any):
+            return partial(initialize, v, self.name, create_data)
+
         def create_data():
             def compose(f, g):
                 return lambda x, y: g(x, f(x, y))
@@ -116,9 +119,6 @@ class ReactiveProperty(Generic[T]):
 
             # noinspection PyTypeChecker
             return self.ReactiveData(init_value, pre_chain, post_chain)
-
-        def init_data(v: Any):
-            return partial(initialize, v, self.name, create_data)
 
         return safe(getattr)(obj, self.KEY) \
             .rescue(init_container) \
