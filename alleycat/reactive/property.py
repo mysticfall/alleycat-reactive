@@ -1,8 +1,10 @@
 from collections import deque
 from functools import reduce, partial
-from typing import TypeVar, Generic, Callable, Optional, Union, Deque
+from typing import TypeVar, Generic, Callable, Optional, Union, Deque, Any
 
+from returns.functions import raise_exception
 from returns.maybe import Maybe
+from returns.result import safe, Failure, Success
 from rx import Observable
 from rx.core.typing import Disposable
 from rx.subject import BehaviorSubject
@@ -83,9 +85,21 @@ class ReactiveProperty(Generic[T]):
     def _get_data(self, obj, init_value: Optional[T] = None) -> ReactiveData[T]:
         assert obj is not None
 
-        if hasattr(obj, self.KEY):
-            return getattr(obj, self.KEY)[self.name]
-        elif init_value is not None:
+        def initialize(container: Any, key: str, default: Callable[[], Any], _: Exception):
+            if init_value is not None:
+                value = default()
+                if type(container) == dict:
+                    container[key] = value
+                else:
+                    setattr(container, key, value)
+
+                return Success(value)
+
+            return Failure(AttributeError("The property has not been properly initialized."))
+
+        init_container = partial(initialize, obj, self.KEY, lambda: {})
+
+        def create_data():
             def compose(f, g):
                 return lambda x, y: g(x, f(x, y))
 
@@ -101,13 +115,16 @@ class ReactiveProperty(Generic[T]):
             post_chain = build_chain(self.post_mod_chain)  # type: ignore
 
             # noinspection PyTypeChecker
-            data = self.ReactiveData(init_value, pre_chain, post_chain)
+            return self.ReactiveData(init_value, pre_chain, post_chain)
 
-            setattr(obj, self.KEY, {self.name: data})
+        def init_data(v: Any):
+            return partial(initialize, v, self.name, create_data)
 
-            return data
-
-        raise AttributeError("The property has not been properly initialized.")
+        return safe(getattr)(obj, self.KEY) \
+            .rescue(init_container) \
+            .bind(lambda v: safe(lambda: v[self.name])().rescue(init_data(v))) \
+            .fix(raise_exception) \
+            .unwrap()
 
     def __get__(self, obj, obj_type=None) -> Union[T, "ReactiveProperty[T]"]:
         if obj is None:
