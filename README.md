@@ -24,6 +24,10 @@ _(TBP)_
 _(TBP)_
 
 ## Usage
+
+### Install
+```pip install alleycat-reactive```
+
 _(TBP)_
 
 ## License
