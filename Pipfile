@@ -5,6 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 mypy = "*"
+pipenv-setup = "*"
 
 [packages]
 rx = "3.1.0"
