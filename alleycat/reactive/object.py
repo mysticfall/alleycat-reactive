@@ -1,24 +1,15 @@
-from typing import TypeVar, Optional
+from typing import TypeVar
 
 from rx import Observable
 from rx.core.typing import Disposable
 
-from alleycat.reactive import observe, extend, ReactiveProperty, PreModifier, PostModifier, dispose
+from alleycat.reactive import observe, ReactiveProperty, dispose
 
 T = TypeVar("T")
 
 
 class ReactiveObject(Disposable):
-
     disposed = ReactiveProperty(False)
-
-    @classmethod
-    def extend(
-            cls,
-            name: str,
-            pre_modifier: Optional[PreModifier] = None,
-            post_modifier: Optional[PostModifier] = None) -> ReactiveProperty[T]:
-        return extend(cls, name, pre_modifier, post_modifier)
 
     def observe(self, name: str) -> Observable:
         return observe(self, name)
