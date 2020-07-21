@@ -10,6 +10,17 @@ from .property import ReactiveProperty
 T = TypeVar("T")
 
 
+def extend(
+        parent: ReactiveProperty[T],
+        pre_modifier: Optional[PreModifier] = None,
+        post_modifier: Optional[PostModifier] = None) -> ReactiveProperty[T]:
+    if parent.read_only and pre_modifier is not None:
+        raise ValueError("Pre-modifier is not applicable to a read-only property.")
+
+    return ReactiveProperty(
+        read_only=parent.read_only, parent=parent, pre_modifier=pre_modifier, post_modifier=post_modifier)
+
+
 def observe(obj, name: Optional[str] = None) -> Observable:
     (target, key) = Maybe \
         .from_value(name) \
@@ -20,22 +31,6 @@ def observe(obj, name: Optional[str] = None) -> Observable:
         raise AttributeError(f"Unknown property name: '{key}'.")
 
     return getattr(target, ReactiveProperty.KEY)[key].observable
-
-
-def extend(
-        obj,
-        name: Optional[str] = None,
-        pre_modifier: Optional[PreModifier] = None,
-        post_modifier: Optional[PostModifier] = None) -> ReactiveProperty[T]:
-    (target, key) = Maybe \
-        .from_value(name) \
-        .map(lambda n: (obj, n)) \
-        .value_or(utils.infer_or_require_name(3, utils.get_object_to_extend))
-
-    parent: ReactiveProperty = getattr(target, key)
-
-    return ReactiveProperty(
-        read_only=parent.read_only, parent=parent, pre_modifier=pre_modifier, post_modifier=post_modifier)
 
 
 def dispose(obj) -> None:

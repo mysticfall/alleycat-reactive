@@ -70,6 +70,7 @@ class Fixture(ReactiveObject):
 
 
 class ExtendedFixture(Fixture):
+    # noinspection PyTypeChecker
     value: int = extend(Fixture.value,
                         pre_modifier=lambda obj, v: v + obj.increment,
                         post_modifier=lambda obj, obs: obs.pipe(ops.map(lambda v: v * obj.multiplier)))

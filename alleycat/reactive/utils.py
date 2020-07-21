@@ -3,7 +3,7 @@ import inspect
 from dis import Instruction
 from itertools import dropwhile, takewhile
 from types import FrameType
-from typing import Iterable, Tuple, Any, TypeVar, Callable, Iterator, List
+from typing import Iterable, Tuple, Any, TypeVar, Callable, List
 
 from returns.maybe import Maybe, Nothing
 from returns.pipeline import flow
@@ -44,29 +44,6 @@ def get_property_reference(frame: FrameType) -> Maybe[Tuple[Any, str]]:
         attr = Maybe.from_value(stack[1]).map(lambda a: str(a.argval))
 
         return variable.bind(lambda v: attr.map(lambda a: (frame.f_locals.get(v), a)))
-    except StopIteration:
-        pass
-
-    return Nothing
-
-
-def get_object_to_extend(frame: FrameType) -> Maybe[Tuple[Any, str]]:
-    try:
-        stack: Iterator[Instruction] = flow(
-            dis.get_instructions(frame.f_code),
-            lambda s: takewhile(lambda i: i.offset != frame.f_lasti, s),
-            lambda s: dropwhile(lambda i: not i.opname.startswith("SETUP_ANNOTATIONS"), s),
-            lambda s: dropwhile(lambda i: not i.opname.startswith("LOAD_NAME") or i.argval != "extend", s),
-            lambda s: dropwhile(lambda i: i.argval == "extend", s))
-
-        variable = Maybe \
-            .from_value(next(takewhile(lambda i: i.opname == "LOAD_NAME", stack))) \
-            .map(lambda v: str(v.argval))
-
-        attr = Maybe.from_value(next(takewhile(lambda i: i.opname == "LOAD_ATTR", stack))) \
-            .map(lambda v: str(v.argval))
-
-        return variable.bind(lambda v: attr.map(lambda a: (frame.f_globals.get(v), a)))
     except StopIteration:
         pass
 
