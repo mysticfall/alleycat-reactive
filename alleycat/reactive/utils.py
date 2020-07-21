@@ -67,8 +67,3 @@ def get_instructions(frame: FrameType) -> Iterable[dis.Instruction]:
         return dropwhile(lambda i: i.offset != frame.f_lasti, dis.get_instructions(frame.f_code))
     except StopIteration:
         return []
-
-
-def dump_instructions(frame: FrameType) -> None:
-    for ins in iter(dis.get_instructions(frame.f_code)):
-        print(ins)
