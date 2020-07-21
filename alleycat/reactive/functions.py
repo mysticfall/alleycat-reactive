@@ -10,7 +10,13 @@ from .property import ReactiveProperty
 T = TypeVar("T")
 
 
-def extend(
+def from_value(value: T, name: Optional[str] = None, read_only=False) -> ReactiveProperty[T]:
+    prop_name = Maybe.from_value(name).or_else_call(utils.infer_or_require_name(3, utils.get_assigned_name))
+
+    return ReactiveProperty(value, name=prop_name, read_only=read_only)
+
+
+def from_property(
         parent: ReactiveProperty[T],
         pre_modifier: Optional[PreModifier] = None,
         post_modifier: Optional[PostModifier] = None) -> ReactiveProperty[T]:
