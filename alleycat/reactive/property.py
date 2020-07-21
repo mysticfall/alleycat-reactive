@@ -34,7 +34,7 @@ class ReactiveProperty(Generic[T]):
         self.init_value = init_value
 
         if parent is None:
-            self.name = Maybe.from_value(name).value_or(utils.infer_or_require_name(3, utils.get_assigned_name))
+            self.name = Maybe.from_value(name).or_else_call(utils.infer_or_require_name(3, utils.get_assigned_name))
 
             self.read_only = read_only
             self.pre_mod_chain = deque()

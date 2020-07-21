@@ -25,7 +25,7 @@ def observe(obj, name: Optional[str] = None) -> Observable:
     (target, key) = Maybe \
         .from_value(name) \
         .map(lambda n: (obj, n)) \
-        .value_or(utils.infer_or_require_name(3, utils.get_property_reference))
+        .or_else_call(utils.infer_or_require_name(3, utils.get_property_reference))
 
     if not hasattr(target, ReactiveProperty.KEY):
         raise AttributeError(f"Unknown property name: '{key}'.")

@@ -50,13 +50,16 @@ def get_property_reference(frame: FrameType) -> Maybe[Tuple[Any, str]]:
     return Nothing
 
 
-def infer_or_require_name(depth: int, extractor: Callable[[FrameType], Maybe[T]]) -> T:
-    value = get_current_frame(depth).bind(extractor).value_or(None)
+def infer_or_require_name(depth: int, extractor: Callable[[FrameType], Maybe[T]]) -> Callable[[], T]:
+    def process():
+        value = get_current_frame(depth + 1).bind(extractor).value_or(None)
 
-    if value is None:
-        raise ValueError("Argument 'name' is required when the platform does not provide bytecode instructions.")
+        if value is None:
+            raise ValueError("Argument 'name' is required when the platform does not provide bytecode instructions.")
 
-    return value
+        return value
+
+    return process
 
 
 def get_instructions(frame: FrameType) -> Iterable[dis.Instruction]:
