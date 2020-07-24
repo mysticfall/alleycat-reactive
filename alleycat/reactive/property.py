@@ -2,7 +2,9 @@ from collections import deque
 from functools import reduce, partial
 from typing import TypeVar, Generic, Callable, Optional, Deque, Any, cast
 
+from returns.maybe import Maybe, Nothing
 from rx import Observable
+from rx import operators as ops
 from rx.subject import BehaviorSubject
 
 from . import PreModifier, PostModifier, ReactiveValue
@@ -17,7 +19,7 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
 
     def __init__(self,
                  name: str,
-                 init_value: Optional[T] = None,
+                 init_value: Maybe[T] = Nothing,
                  read_only=False,
                  pre_modifiers: Optional[Deque[PreModifier]] = None,
                  post_modifiers: Optional[Deque[PostModifier]] = None):
@@ -33,13 +35,18 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
     class PropertyData(ReactiveValue.Data[T]):
 
         def __init__(self,
-                     init_value: T,
+                     init_value: Maybe[T],
                      pre_modifier: Callable[[T], T],
                      post_modifier: Callable[[Observable], Observable]):
-            self._subject = BehaviorSubject(init_value)
+            self._subject = BehaviorSubject(init_value.value_or(None))
             self._modifier = pre_modifier
 
-            super().__init__(post_modifier(self._subject), init_value)
+            obs = post_modifier(self._subject)
+
+            if init_value == Nothing:
+                obs = obs.pipe(ops.skip(1))
+
+            super().__init__(obs, init_value)
 
         # Must override to appease Mypy... I hate Python.
         @property

@@ -1,6 +1,6 @@
 from typing import TypeVar, Optional, Deque
 
-from returns.maybe import Maybe
+from returns.maybe import Maybe, Some
 from rx import Observable
 
 from . import PreModifier, PostModifier
@@ -13,7 +13,7 @@ T = TypeVar("T")
 def from_value(value: T, name: Optional[str] = None, read_only=False) -> ReactiveProperty[T]:
     prop_name = Maybe.from_value(name).or_else_call(utils.infer_or_require_name(3, utils.get_assigned_name))
 
-    return ReactiveProperty(prop_name, value, read_only)
+    return ReactiveProperty(prop_name, Some(value), read_only)
 
 
 def from_property(

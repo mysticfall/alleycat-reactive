@@ -3,6 +3,7 @@ from functools import partial
 from typing import TypeVar, Generic, Callable, Optional, Union, Any
 
 from returns.functions import raise_exception
+from returns.maybe import Maybe, Nothing
 from returns.result import safe, Success
 from rx import Observable
 from rx.core.typing import Disposable
@@ -36,20 +37,26 @@ class ReactiveValue(Generic[T], ABC):
 
         observable: Observable
 
-        def __init__(self, observable: Observable, init_value: Optional[U] = None):
+        def __init__(self, observable: Observable, init_value: Maybe[U] = Nothing):
             assert observable is not None
 
             self.observable = observable
-            self._value = init_value
+            self.lazy = init_value == Nothing
+            self.initialized = not self.lazy
+
+            self._value = init_value.value_or(None)
 
             def update(value):
-                self._value = value
+                if not self.initialized:
+                    self.initialized = True
+
+                self._value = value  # We don't use Some(value) here to avoid excessive object allocations.
 
             self._cancel_update = self.observable.subscribe(update, lambda x: print(x))
 
         @property
         def value(self) -> U:
-            if self._value is None:
+            if not self.initialized:
                 raise AttributeError("The value is not initialized yet.")
 
             return self._value
