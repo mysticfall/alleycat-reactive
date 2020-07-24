@@ -11,7 +11,7 @@ from returns.pipeline import flow
 T = TypeVar("T")
 
 
-def get_current_frame(depth: int) -> Maybe[FrameType]:
+def get_current_frame(depth: int = 1) -> Maybe[FrameType]:
     def move_up(frame: Maybe[FrameType]) -> Maybe[FrameType]:
         return frame.bind(lambda f: Maybe.from_value(f.f_back))
 
@@ -50,7 +50,7 @@ def get_property_reference(frame: FrameType) -> Maybe[Tuple[Any, str]]:
     return Nothing
 
 
-def infer_or_require_name(depth: int, extractor: Callable[[FrameType], Maybe[T]]) -> Callable[[], T]:
+def infer_or_require_name(extractor: Callable[[FrameType], Maybe[T]], depth: int = 1) -> Callable[[], T]:
     def process():
         value = get_current_frame(depth + 1).bind(extractor).value_or(None)
 

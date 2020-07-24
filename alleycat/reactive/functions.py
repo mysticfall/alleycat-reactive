@@ -11,7 +11,7 @@ T = TypeVar("T")
 
 
 def from_value(value: T, name: Optional[str] = None, read_only=False) -> ReactiveProperty[T]:
-    prop_name = Maybe.from_value(name).or_else_call(utils.infer_or_require_name(3, utils.get_assigned_name))
+    prop_name = Maybe.from_value(name).or_else_call(utils.infer_or_require_name(utils.get_assigned_name, 3))
 
     return ReactiveProperty(prop_name, Some(value), read_only)
 
@@ -47,7 +47,7 @@ def observe(obj, name: Optional[str] = None) -> Observable:
     (target, key) = Maybe \
         .from_value(name) \
         .map(lambda n: (obj, n)) \
-        .or_else_call(utils.infer_or_require_name(3, utils.get_property_reference))
+        .or_else_call(utils.infer_or_require_name(utils.get_property_reference, 3))
 
     if not hasattr(target, ReactiveProperty.KEY):
         raise AttributeError(f"Unknown property name: '{key}'.")
