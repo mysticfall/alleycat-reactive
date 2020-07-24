@@ -1,9 +1,9 @@
 import unittest
 
-from alleycat.reactive import ReactiveObject, ReactiveProperty, observe, from_value
+from alleycat.reactive import ReactiveObject, observe, from_value
 
 
-class ReactiveObjectTestCase(unittest.TestCase):
+class ReactiveObjectTest(unittest.TestCase):
     def test_dispose(self):
         with Fixture() as obj:
             self.assertEqual(obj.disposed, False)
