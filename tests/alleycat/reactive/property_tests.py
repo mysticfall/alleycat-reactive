@@ -1,86 +1,121 @@
 import unittest
+from collections import deque
+from typing import TypeVar, List
 
+from returns.maybe import Maybe, Some
 from rx import operators as ops
 
-from alleycat.reactive import ReactiveObject, from_value, from_property, observe
+from alleycat.reactive import ReactiveProperty
+
+T = TypeVar("T")
 
 
-class ReactivePropertyTestCase(unittest.TestCase):
+# noinspection DuplicatedCode
+class ReactivePropertyTest(unittest.TestCase):
+    class Fixture:
+        pass
+
+    fixture: Fixture
+
+    def setUp(self) -> None:
+        super().setUp()
+
+        self.fixture = self.Fixture()
+
     def test_initialization(self):
-        with Fixture(init_value=10) as obj1, Fixture(init_value=20) as obj2:
-            self.assertEqual(obj1.value, 10)
-            self.assertEqual(obj2.value, 20)
+        with self.assertRaises(ValueError) as cm:
+            # noinspection PyTypeChecker
+            ReactiveProperty(None)
 
-    def test_modification(self):
-        with Fixture() as obj1, Fixture() as obj2:
-            obj1.value = 10
-            obj2.value = 20
+        self.assertEqual(cm.exception.args[0], "Name is a required argument.")
 
-            self.assertEqual(obj1.value, 10)
-            self.assertEqual(obj2.value, 20)
+        self.assertEqual(ReactiveProperty("value").name, "value")
+        self.assertEqual(ReactiveProperty("value", Maybe.from_value(3)).init_value, Some(3))
+        self.assertEqual(ReactiveProperty("value", Maybe.from_value("test")).init_value, Some("test"))
+        self.assertEqual(ReactiveProperty("value", read_only=True).read_only, True)
+        self.assertEqual(ReactiveProperty("value", read_only=False).read_only, False)
 
-            obj1.value = 30
+        pre_modifiers = deque([lambda obj, v: v + obj.increment])
+        post_modifiers = deque([lambda obj, obs: obs.pipe(ops.map(lambda v: v * obj.multiplier))])
 
-            self.assertEqual(obj1.value, 30)
-            self.assertEqual(obj2.value, 20)
+        self.assertEqual(ReactiveProperty("value", pre_modifiers=pre_modifiers).pre_modifiers, pre_modifiers)
+        self.assertEqual(ReactiveProperty("value", post_modifiers=post_modifiers).post_modifiers, post_modifiers)
+
+    def test_read_value(self):
+        prop = ReactiveProperty("name", Some("test"))
+
+        self.assertEqual(prop.__get__({}), "test")
+
+    def test_write_value(self):
+        prop = ReactiveProperty("name", Some("ABC"))
+
+        prop.__set__(self.fixture, "123")
+
+        self.assertEqual(prop.__get__(self.fixture), "123")
+
+    def test_lazy_init(self):
+        prop = ReactiveProperty("name")
+
+        with self.assertRaises(AttributeError) as cm:
+            ReactiveProperty("name").__get__({})
+
+        self.assertEqual(cm.exception.args[0], "The value is not initialized yet.")
+
+        prop.__set__(self.fixture, "simple")
+
+        self.assertEqual(prop.__get__(self.fixture), "simple")
 
     def test_observe(self):
-        with Fixture(init_value=10) as obj:
-            observable = observe(obj.value)
+        prop = ReactiveProperty("name", Some("Do, Re, Mi"))
 
-            self.assertIsNotNone(observable)
+        obs = prop.observable(self.fixture)
 
-            last_changed = obj.value
+        self.assertIsNotNone(obs)
 
-            def value_changed(value):
-                nonlocal last_changed
-                last_changed = value
+        last_changed: List[str] = []
 
-            observable.subscribe(value_changed)
+        def value_changed(value):
+            nonlocal last_changed
+            last_changed.append(value)
 
-            obj.value = 30
+        obs.subscribe(value_changed)
 
-            self.assertEqual(last_changed, 30)
+        # By now, you should be able to hum the rest of the song, if you are cultured :P
+        prop.__set__(self.fixture, "ABC")
 
-    def test_extend(self):
-        with ExtendedFixture(increment=5, multiplier=2) as obj:
-            observable = observe(obj.value)
+        self.assertEqual(last_changed, ["Do, Re, Mi", "ABC"])
 
-            self.assertIsNotNone(observable)
+    def test_lazy_observe(self):
+        prop = ReactiveProperty("name")
 
-            observed_change = obj.value
+        obs = prop.observable(self.fixture)
 
-            def value_changed(value):
-                nonlocal observed_change
-                observed_change = value
+        self.assertIsNotNone(obs)
 
-            observable.subscribe(value_changed)
+        last_changed: List[str] = []
 
-            obj.value = 30
+        def value_changed(value):
+            nonlocal last_changed
+            last_changed.append(value)
 
-            self.assertEqual(observed_change, 70)
-            self.assertEqual(obj.value, 70)
+        obs.subscribe(value_changed)
 
+        prop.__set__(self.fixture, "ABC")
 
-class Fixture(ReactiveObject):
-    value: int = from_value(0)
+        self.assertEqual(last_changed, ["ABC"])
 
-    def __init__(self, init_value=0):
-        self.value = init_value
+    def test_multiple_properties(self):
+        name = ReactiveProperty("name", Some("Slim Shady"))
+        age = ReactiveProperty("age", Some(26))
 
+        self.assertEqual(name.__get__(self.fixture), "Slim Shady")
+        self.assertEqual(age.__get__(self.fixture), 26)
 
-class ExtendedFixture(Fixture):
-    # noinspection PyTypeChecker
-    value: int = from_property(
-        Fixture.value,
-        pre_modifier=lambda obj, v: v + obj.increment,
-        post_modifier=lambda obj, obs: obs.pipe(ops.map(lambda v: v * obj.multiplier)))
+        name.__set__(self.fixture, "The real Slim Shady")
+        age.__set__(self.fixture, 47)  # Yeah, time flies fast.
 
-    def __init__(self, init_value=0, increment=0, multiplier=1):
-        self.increment = increment
-        self.multiplier = multiplier
-
-        super().__init__(init_value)
+        self.assertEqual(name.__get__(self.fixture), "The real Slim Shady")
+        self.assertEqual(age.__get__(self.fixture), 47)
 
 
 if __name__ == '__main__':
