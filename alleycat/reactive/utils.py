@@ -3,7 +3,7 @@ import inspect
 from dis import Instruction
 from itertools import dropwhile, takewhile
 from types import FrameType
-from typing import Iterable, Tuple, Any, TypeVar, Callable, List
+from typing import Tuple, Any, TypeVar, Callable, List, Iterator
 
 from returns.maybe import Maybe, Nothing
 from returns.pipeline import flow
@@ -62,8 +62,8 @@ def infer_or_require_name(extractor: Callable[[FrameType], Maybe[T]], depth: int
     return process
 
 
-def get_instructions(frame: FrameType) -> Iterable[dis.Instruction]:
+def get_instructions(frame: FrameType) -> Iterator[dis.Instruction]:
     try:
         return dropwhile(lambda i: i.offset != frame.f_lasti, dis.get_instructions(frame.f_code))
     except StopIteration:
-        return []
+        return iter([])
