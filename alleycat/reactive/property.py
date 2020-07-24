@@ -30,7 +30,7 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
         self.pre_modifiers = deque() if pre_modifiers is None else pre_modifiers
         self.post_modifiers = deque() if post_modifiers is None else post_modifiers
 
-    class ReactiveData(ReactiveValue.Data[T]):
+    class PropertyData(ReactiveValue.Data[T]):
 
         def __init__(self,
                      init_value: T,
@@ -54,7 +54,7 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             self._subject.on_completed()
             super().dispose()
 
-    def _create_data(self, obj: Any) -> ReactiveData:
+    def _create_data(self, obj: Any) -> PropertyData:
         def compose(f, g):
             return lambda x, y: g(x, f(x, y))
 
@@ -70,10 +70,10 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
         post_chain = build_chain(self.post_modifiers)  # type: ignore
 
         # noinspection PyTypeChecker
-        return self.ReactiveData(self.init_value, pre_chain, post_chain)
+        return self.PropertyData(self.init_value, pre_chain, post_chain)
 
-    def _get_data(self, obj: Any) -> ReactiveData:
-        return cast(ReactiveProperty.ReactiveData, super()._get_data(obj))
+    def _get_data(self, obj: Any) -> PropertyData:
+        return cast(ReactiveProperty.PropertyData, super()._get_data(obj))
 
     def __set__(self, obj: Any, value: T) -> None:
         if obj is None:
