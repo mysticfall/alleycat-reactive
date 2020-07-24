@@ -37,7 +37,7 @@ def from_property(
         post_modifiers.appendleft(post_modifier)
 
     return ReactiveProperty(
-        parent.name, parent.read_only, pre_modifiers=pre_modifiers, post_modifiers=post_modifiers)
+        parent.name, parent.init_value, parent.read_only, pre_modifiers=pre_modifiers, post_modifiers=post_modifiers)
 
 
 def observe(obj, name: Optional[str] = None) -> Observable:
