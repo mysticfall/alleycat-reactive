@@ -1,4 +1,4 @@
-from typing import TypeVar, Optional
+from typing import TypeVar, Optional, Deque
 
 from returns.maybe import Maybe
 from rx import Observable
@@ -13,7 +13,7 @@ T = TypeVar("T")
 def from_value(value: T, name: Optional[str] = None, read_only=False) -> ReactiveProperty[T]:
     prop_name = Maybe.from_value(name).or_else_call(utils.infer_or_require_name(3, utils.get_assigned_name))
 
-    return ReactiveProperty(value, name=prop_name, read_only=read_only)
+    return ReactiveProperty(prop_name, value, read_only)
 
 
 def from_property(
@@ -23,8 +23,19 @@ def from_property(
     if parent.read_only and pre_modifier is not None:
         raise ValueError("Pre-modifier is not applicable to a read-only property.")
 
+    pre_modifiers: Optional[Deque[PreModifier]] = None
+    post_modifiers: Optional[Deque[PostModifier]] = None
+
+    if pre_modifier is not None:
+        pre_modifiers = parent.pre_modifiers.copy()
+        pre_modifiers.appendleft(pre_modifier)
+
+    if post_modifier is not None:
+        post_modifiers = parent.post_modifiers.copy()
+        post_modifiers.appendleft(post_modifier)
+
     return ReactiveProperty(
-        read_only=parent.read_only, parent=parent, pre_modifier=pre_modifier, post_modifier=post_modifier)
+        parent.name, parent.read_only, pre_modifiers=pre_modifiers, post_modifiers=post_modifiers)
 
 
 def observe(obj, name: Optional[str] = None) -> Observable:

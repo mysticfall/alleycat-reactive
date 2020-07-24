@@ -1,6 +1,6 @@
 import unittest
 
-from alleycat.reactive import ReactiveObject, ReactiveProperty, observe
+from alleycat.reactive import ReactiveObject, ReactiveProperty, observe, from_value
 
 
 class ReactiveObjectTestCase(unittest.TestCase):
@@ -44,7 +44,7 @@ class ReactiveObjectTestCase(unittest.TestCase):
 
 
 class Fixture(ReactiveObject):
-    value: int = ReactiveProperty()
+    value: int = from_value(0)
 
     def __init__(self, init_value=0):
         self.value = init_value

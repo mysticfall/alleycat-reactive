@@ -3,13 +3,13 @@ from typing import TypeVar
 from rx import Observable
 from rx.core.typing import Disposable
 
-from alleycat.reactive import observe, ReactiveProperty, dispose
+from alleycat.reactive import observe, dispose, from_value
 
 T = TypeVar("T")
 
 
 class ReactiveObject(Disposable):
-    disposed = ReactiveProperty(False)
+    disposed = from_value(False)
 
     def observe(self, name: str) -> Observable:
         return observe(self, name)
