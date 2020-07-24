@@ -36,11 +36,11 @@ class ReactiveValue(Generic[T], ABC):
 
         observable: Observable
 
-        def __init__(self, observable: Observable):
+        def __init__(self, observable: Observable, init_value: Optional[U] = None):
             assert observable is not None
 
             self.observable = observable
-            self._value: Optional[U] = None
+            self._value = init_value
 
             def update(value):
                 self._value = value

@@ -39,7 +39,7 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             self._subject = BehaviorSubject(init_value)
             self._modifier = pre_modifier
 
-            super().__init__(post_modifier(self._subject))
+            super().__init__(post_modifier(self._subject), init_value)
 
         # Must override to appease Mypy... I hate Python.
         @property
