@@ -62,6 +62,7 @@ class ReactiveValue(Generic[T], ABC):
         pass
 
     def _get_data(self, obj: Any) -> Data[T]:
+        assert obj is not None
 
         def initialize(container: Any, key: str, default: Callable[[], Any], _: Exception):
             value = default()

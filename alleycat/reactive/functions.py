@@ -20,7 +20,9 @@ def from_property(
         parent: ReactiveProperty[T],
         pre_modifier: Optional[PreModifier] = None,
         post_modifier: Optional[PostModifier] = None) -> ReactiveProperty[T]:
-    if parent.read_only and pre_modifier is not None:
+    if parent is None:
+        raise ValueError("Argument parent is required.")
+    elif parent.read_only and pre_modifier is not None:
         raise ValueError("Pre-modifier is not applicable to a read-only property.")
 
     pre_modifiers: Optional[Deque[PreModifier]] = None
@@ -39,6 +41,9 @@ def from_property(
 
 
 def observe(obj, name: Optional[str] = None) -> Observable:
+    if obj is None:
+        raise ValueError("Cannot observe a None object.")
+
     (target, key) = Maybe \
         .from_value(name) \
         .map(lambda n: (obj, n)) \
@@ -51,7 +56,10 @@ def observe(obj, name: Optional[str] = None) -> Observable:
 
 
 def dispose(obj) -> None:
+    if obj is None:
+        raise ValueError("Cannot dispose a None object.")
+
     properties = getattr(obj, ReactiveProperty.KEY, {}).values()
 
-    for data in properties:
-        data.dispose()
+    for p in properties:
+        p.dispose()
