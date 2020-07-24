@@ -35,6 +35,7 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
     class PropertyData(ReactiveValue.Data[T]):
 
         def __init__(self,
+                     name: str,
                      init_value: Maybe[T],
                      pre_modifier: Callable[[T], T],
                      post_modifier: Callable[[Observable], Observable]):
@@ -46,7 +47,7 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             if init_value == Nothing:
                 obs = obs.pipe(ops.skip(1))
 
-            super().__init__(obs, init_value)
+            super().__init__(name, obs, init_value)
 
         # Must override to appease Mypy... I hate Python.
         @property
@@ -55,10 +56,13 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
 
         @value.setter
         def value(self, value: T):
+            self._check_disposed()
             self._subject.on_next(self._modifier(value))
 
         def dispose(self) -> None:
+            self._check_disposed()
             self._subject.on_completed()
+
             super().dispose()
 
     def _create_data(self, obj: Any) -> PropertyData:
@@ -77,7 +81,7 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
         post_chain = build_chain(self.post_modifiers)  # type: ignore
 
         # noinspection PyTypeChecker
-        return self.PropertyData(self.init_value, pre_chain, post_chain)
+        return self.PropertyData(self.name, self.init_value, pre_chain, post_chain)
 
     def _get_data(self, obj: Any) -> PropertyData:
         return cast(ReactiveProperty.PropertyData, super()._get_data(obj))

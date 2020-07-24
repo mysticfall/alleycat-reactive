@@ -12,9 +12,15 @@ class ReactiveObject(Disposable):
     disposed = from_value(False)
 
     def observe(self, name: str) -> Observable:
+        if self.disposed:
+            raise RuntimeError("Cannot observe a disposed object.")
+
         return observe(self, name)
 
     def dispose(self) -> None:
+        if self.disposed:
+            raise RuntimeError("The object has already been disposed.")
+
         self.disposed = True
 
         dispose(self)
@@ -23,4 +29,5 @@ class ReactiveObject(Disposable):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.dispose()
+        if not self.disposed:
+            self.dispose()

@@ -35,16 +35,17 @@ class ReactiveValue(Generic[T], ABC):
 
     class Data(Generic[U], Disposable, ABC):
 
-        observable: Observable
-
-        def __init__(self, observable: Observable, init_value: Maybe[U] = Nothing):
+        def __init__(self, name: str, observable: Observable, init_value: Maybe[U] = Nothing):
+            assert str is not None
             assert observable is not None
 
-            self.observable = observable
+            self.name = name
             self.lazy = init_value == Nothing
             self.initialized = not self.lazy
+            self.disposed = False
 
             self._value = init_value.value_or(None)
+            self._observable = observable
 
             def update(value):
                 if not self.initialized:
@@ -54,17 +55,30 @@ class ReactiveValue(Generic[T], ABC):
 
             self._cancel_update = self.observable.subscribe(update, lambda x: print(x))
 
+        def _check_disposed(self) -> None:
+            if self.disposed:
+                raise AttributeError(f"Property '{self.name}' has been disposed.")
+
+        @property
+        def observable(self) -> Observable:
+            self._check_disposed()
+
+            return self._observable
+
         @property
         def value(self) -> U:
             if not self.initialized:
-                raise AttributeError("The value is not initialized yet.")
+                raise AttributeError(f"Property '{self.name}' is not initialized yet.")
 
             assert self._value is not None  # Again, to appease the wrath of the Mypyan god.
 
             return self._value
 
         def dispose(self) -> None:
+            self._check_disposed()
             self._cancel_update.dispose()
+
+            self.disposed = True
 
     @abstractmethod
     def _create_data(self, obj: Any) -> Data[T]:

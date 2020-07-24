@@ -1,6 +1,6 @@
 import unittest
 from collections import deque
-from typing import TypeVar, List
+from typing import TypeVar, List, Callable, Any
 
 from returns.maybe import Maybe, Some
 from rx import operators as ops
@@ -59,7 +59,7 @@ class ReactivePropertyTest(unittest.TestCase):
         with self.assertRaises(AttributeError) as cm:
             ReactiveProperty("name").__get__({})
 
-        self.assertEqual(cm.exception.args[0], "The value is not initialized yet.")
+        self.assertEqual(cm.exception.args[0], "Property 'name' is not initialized yet.")
 
         prop.__set__(self.fixture, "simple")
 
@@ -116,6 +116,32 @@ class ReactivePropertyTest(unittest.TestCase):
 
         self.assertEqual(name.__get__(self.fixture), "The real Slim Shady")
         self.assertEqual(age.__get__(self.fixture), 47)
+
+    def test_access_after_dispose(self):
+        value = ReactiveProperty("value")
+        value.__set__(self.fixture, 1)
+
+        data = value._get_data(self.fixture)
+
+        self.assertIs(data.disposed, False)
+
+        data.dispose()
+
+        self.assertIs(data.disposed, True)
+
+        self.assertEqual(value.__get__(self.fixture), 1)
+
+        expected = "Property 'value' has been disposed."
+
+        def assert_attr_error(fun: Callable[[], Any]):
+            with self.assertRaises(AttributeError) as cm:
+                fun()
+
+            self.assertEqual(cm.exception.args[0], expected)
+
+        assert_attr_error(lambda: value.__set__(self.fixture, 1))
+        assert_attr_error(lambda: value.observable(self.fixture))
+        assert_attr_error(lambda: data.dispose())
 
 
 if __name__ == '__main__':

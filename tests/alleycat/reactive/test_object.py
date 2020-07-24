@@ -1,4 +1,5 @@
 import unittest
+from typing import Any, Callable
 
 from alleycat.reactive import ReactiveObject, observe, from_value
 
@@ -41,6 +42,25 @@ class ReactiveObjectTest(unittest.TestCase):
             obj.dispose()
 
             self.assertEqual(completed, True)
+
+    def test_access_after_dispose(self):
+        def assert_error(fun: Callable[[], Any], expected: str):
+            with self.assertRaises(Exception) as cm:
+                fun()
+
+            self.assertEqual(cm.exception.args[0], expected)
+
+        with Fixture() as obj:
+            obj.dispose()
+
+            self.assertEqual(obj.value, 0)
+
+            def modify_value():
+                obj.value = 10
+
+            assert_error(modify_value, "Property 'value' has been disposed.")
+            assert_error(lambda: obj.observe("value"), "Cannot observe a disposed object.")
+            assert_error(lambda: obj.dispose(), "The object has already been disposed.")
 
 
 class Fixture(ReactiveObject):
