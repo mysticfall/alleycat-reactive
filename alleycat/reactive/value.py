@@ -59,6 +59,8 @@ class ReactiveValue(Generic[T], ABC):
             if not self.initialized:
                 raise AttributeError("The value is not initialized yet.")
 
+            assert self._value is not None  # Again, to appease the wrath of the Mypyan god.
+
             return self._value
 
         def dispose(self) -> None:
