@@ -39,7 +39,9 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
                      init_value: Maybe[T],
                      pre_modifier: Callable[[T], T],
                      post_modifier: Callable[[Observable], Observable]):
-            self._subject = BehaviorSubject(init_value.value_or(None))
+            value = init_value.map(pre_modifier)
+
+            self._subject = BehaviorSubject(value.value_or(None))
             self._modifier = pre_modifier
 
             obs = post_modifier(self._subject)
@@ -47,7 +49,7 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             if init_value == Nothing:
                 obs = obs.pipe(ops.skip(1))
 
-            super().__init__(name, obs, init_value)
+            super().__init__(name, obs, value)
 
         # Must override to appease Mypy... I hate Python.
         @property
