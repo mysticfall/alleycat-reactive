@@ -2,9 +2,8 @@ from collections import deque
 from functools import reduce, partial
 from typing import TypeVar, Generic, Callable, Optional, Deque, Any, cast
 
-from returns.maybe import Maybe, Nothing
+from returns.maybe import Maybe, Nothing, Some
 from rx import Observable
-from rx import operators as ops
 from rx.subject import BehaviorSubject
 
 from . import PreModifier, PostModifier, ReactiveValue
@@ -38,17 +37,26 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
                      init_value: Maybe[T],
                      pre_modifier: Callable[[T], T],
                      post_modifier: Callable[[Observable], Observable]):
-            value = init_value.map(pre_modifier)
+            assert name is not None
+            assert init_value is not None
+            assert pre_modifier is not None
+            assert post_modifier is not None
 
-            self._subject = BehaviorSubject(value.value_or(None))
-            self._modifier = pre_modifier
+            self._property: Optional[BehaviorSubject] = None
 
-            obs = post_modifier(self._subject)
+            self._pre_modifier = pre_modifier
+            self._post_modifier = post_modifier
 
-            if init_value == Nothing:
-                obs = obs.pipe(ops.skip(1))
+            init_value.map(pre_modifier).map(lambda v: BehaviorSubject(v))
 
-            super().__init__(name, obs, value)
+            obs: Maybe[Observable] = Nothing
+
+            if init_value != Nothing:
+                self._property = BehaviorSubject(self._pre_modifier(init_value.unwrap()))
+
+                obs = Some(self._post_modifier(self._property))
+
+            super().__init__(name, obs)
 
         # Must override to appease Mypy... I hate Python.
         @property
@@ -58,15 +66,26 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
         @value.setter
         def value(self, value: T):
             self._check_disposed()
-            self._subject.on_next(self._modifier(value))
+
+            if self.initialized:
+                assert self._property is not None
+
+                self._property.on_next(self._pre_modifier(value))
+            else:
+                self._property = BehaviorSubject(self._pre_modifier(value))
+
+                self.observable = self._post_modifier(self._property)
 
         def dispose(self) -> None:
+            assert self._property is not None
+
             self._check_disposed()
-            self._subject.on_completed()
+            self._property.on_completed()
 
             super().dispose()
 
     def _create_data(self, obj: Any) -> PropertyData:
+        assert obj is not None
         assert self.name is not None
 
         def compose(f, g):
@@ -87,6 +106,8 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
         return self.PropertyData(self.name, self.init_value, pre_chain, post_chain)
 
     def _get_data(self, obj: Any) -> PropertyData:
+        assert obj is not None
+
         return cast(ReactiveProperty.PropertyData, super()._get_data(obj))
 
     def __set__(self, obj: Any, value: T) -> None:

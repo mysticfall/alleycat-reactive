@@ -2,11 +2,14 @@ from abc import ABC, abstractmethod
 from functools import partial
 from typing import TypeVar, Generic, Callable, Optional, Union, Any
 
+import rx
 from returns.functions import raise_exception
 from returns.maybe import Maybe, Nothing
 from returns.result import safe, Success
 from rx import Observable
+from rx import operators as ops
 from rx.core.typing import Disposable
+from rx.subject import BehaviorSubject
 
 T = TypeVar("T")
 U = TypeVar("U")
@@ -41,21 +44,26 @@ class ReactiveValue(Generic[T], ABC):
 
     class Data(Generic[U], Disposable, ABC):
 
-        def __init__(self, name: str, observable: Observable, init_value: Maybe[U] = Nothing):
+        def __init__(self, name: str, observable: Maybe[Observable]):
             assert str is not None
             assert observable is not None
 
             self.name = name
-            self.lazy = init_value == Nothing
-            self.initialized = not self.lazy
-            self.disposed = False
 
-            self._value = init_value.value_or(None)
-            self._observable = observable
+            self._value: Optional[U] = None
+
+            self._initialized = observable != Nothing
+            self._disposed = False
+
+            if observable is Nothing:
+                self._subject = BehaviorSubject(rx.empty())
+                self._observable = self._subject.pipe(ops.switch_latest())
+            else:
+                self._observable = observable.unwrap()
 
             def update(value):
                 if not self.initialized:
-                    self.initialized = True
+                    self._initialized = True
 
                 self._value = value  # We don't use Some(value) here to avoid excessive object allocations.
 
@@ -66,10 +74,8 @@ class ReactiveValue(Generic[T], ABC):
                 raise AttributeError(f"Property '{self.name}' has been disposed.")
 
         @property
-        def observable(self) -> Observable:
-            self._check_disposed()
-
-            return self._observable
+        def initialized(self) -> bool:
+            return self._initialized
 
         @property
         def value(self) -> U:
@@ -80,11 +86,28 @@ class ReactiveValue(Generic[T], ABC):
 
             return self._value
 
+        @property
+        def observable(self) -> Observable:
+            self._check_disposed()
+
+            return self._observable
+
+        @observable.setter
+        def observable(self, value: Observable):
+            assert value is not None
+
+            self._check_disposed()
+            self._subject.on_next(value)
+
+        @property
+        def disposed(self) -> bool:
+            return self._disposed
+
         def dispose(self) -> None:
             self._check_disposed()
             self._cancel_update.dispose()
 
-            self.disposed = True
+            self._disposed = True
 
     @abstractmethod
     def _create_data(self, obj: Any) -> Data[T]:
