@@ -51,7 +51,7 @@ def observe(obj, name: Optional[str] = None) -> Observable:
 
     prop: ReactiveValue = getattr(type(target), key)
 
-    if prop is None or not isinstance(prop, ReactiveValue):
+    if not isinstance(prop, ReactiveValue):
         raise AttributeError(f"Unknown property name: '{key}'.")
 
     return prop.observable(target)
