@@ -18,13 +18,12 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
     post_modifiers: Deque[PostModifier]
 
     def __init__(self,
-                 name: str,
                  init_value: Maybe[T] = Nothing,
                  read_only=False,
                  pre_modifiers: Optional[Deque[PreModifier]] = None,
-                 post_modifiers: Optional[Deque[PostModifier]] = None):
+                 post_modifiers: Optional[Deque[PostModifier]] = None) -> None:
 
-        super().__init__(name)
+        super().__init__()
 
         self.init_value = init_value
         self.read_only = read_only
@@ -68,6 +67,8 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             super().dispose()
 
     def _create_data(self, obj: Any) -> PropertyData:
+        assert self.name is not None
+
         def compose(f, g):
             return lambda x, y: g(x, f(x, y))
 

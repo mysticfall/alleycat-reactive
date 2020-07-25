@@ -15,23 +15,29 @@ U = TypeVar("U")
 class ReactiveValue(Generic[T], ABC):
     KEY = "_rx_value"
 
-    def __init__(self, name: str):
-        if name is None:
-            raise ValueError("Name is a required argument.")
+    __slots__ = ()
 
-        self.name = name
+    def __init__(self) -> None:
+        self._name: Optional[str] = None
 
-    def __get__(self, obj: Any, obj_type: Optional[type] = None) -> Union[T, "ReactiveValue[T]"]:
-        if obj is None:
-            return self
-
-        return self._get_data(obj).value
+    @property
+    def name(self) -> Optional[str]:
+        return self._name
 
     def observable(self, obj: Any) -> Observable:
         if obj is None:
             raise ValueError("Cannot observe a None object.")
 
         return self._get_data(obj).observable
+
+    def __set_name__(self, obj, name):
+        self._name = name
+
+    def __get__(self, obj: Any, obj_type: Optional[type] = None) -> Union[T, "ReactiveValue[T]"]:
+        if obj is None:
+            return self
+
+        return self._get_data(obj).value
 
     class Data(Generic[U], Disposable, ABC):
 
@@ -86,6 +92,9 @@ class ReactiveValue(Generic[T], ABC):
 
     def _get_data(self, obj: Any) -> Data[T]:
         assert obj is not None
+
+        if self._name is None:
+            raise AttributeError("The class must be instantiated as a property of a class.")
 
         def initialize(container: Any, key: str, default: Callable[[], Any], _: Exception):
             value = default()

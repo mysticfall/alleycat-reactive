@@ -8,12 +8,10 @@ from alleycat.reactive import ReactiveObject, from_value, observe, from_property
 
 class FunctionsTest(unittest.TestCase):
     def test_from_value(self):
-        self.assertEqual(from_value(True, "Detective").name, "Detective")
-
         class Fixture(ReactiveObject):
             mary = from_value(100, read_only=True)
 
-            poppins = from_value("Supercalifragilisticexpialidocious", "named_value")
+            poppins = from_value("Supercalifragilisticexpialidocious")
 
         fixture = Fixture()
 
@@ -34,7 +32,7 @@ class FunctionsTest(unittest.TestCase):
         class Fixture(ReactiveObject):
             mary = from_value(100, read_only=True)
 
-            poppins = from_value("Supercalifragilisticexpialidocious", "named_value")
+            poppins = from_value("Supercalifragilisticexpialidocious")
 
         fixture = Fixture()
 

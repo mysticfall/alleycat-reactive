@@ -1,4 +1,5 @@
-from typing import TypeVar, Optional, Deque
+from types import FrameType
+from typing import TypeVar, Optional, Deque, Callable
 
 from returns.maybe import Maybe, Some
 from rx import Observable
@@ -10,10 +11,8 @@ from .property import ReactiveProperty
 T = TypeVar("T")
 
 
-def from_value(value: T, name: Optional[str] = None, read_only=False) -> ReactiveProperty[T]:
-    prop_name = Maybe.from_value(name).or_else_call(utils.infer_or_require_name(utils.get_assigned_name, 3))
-
-    return ReactiveProperty(prop_name, Some(value), read_only)
+def from_value(value: T, read_only=False) -> ReactiveProperty[T]:
+    return ReactiveProperty(Some(value), read_only)
 
 
 def from_property(
@@ -37,17 +36,29 @@ def from_property(
         post_modifiers.appendleft(post_modifier)
 
     return ReactiveProperty(
-        parent.name, parent.init_value, parent.read_only, pre_modifiers=pre_modifiers, post_modifiers=post_modifiers)
+        parent.init_value, parent.read_only, pre_modifiers=pre_modifiers, post_modifiers=post_modifiers)
 
 
 def observe(obj, name: Optional[str] = None) -> Observable:
     if obj is None:
         raise ValueError("Cannot observe a None object.")
 
+    def infer_name(extractor: Callable[[FrameType], Maybe[T]], depth: int) -> Callable[[], T]:
+        def process():
+            value = utils.get_current_frame(depth + 1).bind(extractor).value_or(None)
+
+            if value is None:
+                raise ValueError(
+                    "Argument 'name' is required when the platform does not provide bytecode instructions.")
+
+            return value
+
+        return process
+
     (target, key) = Maybe \
         .from_value(name) \
         .map(lambda n: (obj, n)) \
-        .or_else_call(utils.infer_or_require_name(utils.get_property_reference, 3))
+        .or_else_call(infer_name(utils.get_property_reference, 3))
 
     prop: ReactiveValue = getattr(type(target), key)
 

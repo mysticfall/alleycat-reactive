@@ -27,20 +27,6 @@ class UtilsTest(unittest.TestCase):
         self.assertIsNotNone(frame)
         self.assertDictEqual({"maxine": "caulfield", "depth": 2, "inner": inner}, frame.f_locals)
 
-    def test_get_assigned_name(self):
-        def fun():
-            frame = utils.get_current_frame(2)
-            return frame.bind(utils.get_assigned_name).unwrap()
-
-        class Blackwell:
-            value = 1
-
-            kate_marsh = fun()
-
-            value2 = "1"
-
-        self.assertEqual("kate_marsh", Blackwell().kate_marsh)
-
     def test_get_property_reference(self):
         def fun(_):
             frame = utils.get_current_frame(2)
@@ -60,33 +46,6 @@ class UtilsTest(unittest.TestCase):
 
         self.assertEqual(life, obj)
         self.assertEqual("is_strange", prop)
-
-    def test_infer_or_require_name(self):
-        def is_not_fun():
-            return at_all()
-
-        def at_all():
-            return utils.infer_or_require_name(utils.get_assigned_name, 3)()
-
-        def is_step_douche(_):
-            return utils.infer_or_require_name(utils.get_property_reference, 2)()
-
-        class David:
-            madsen = is_not_fun()
-
-        self.assertEqual("madsen", David.madsen)
-
-        (obj, prop) = is_step_douche(David.madsen)
-
-        self.assertEqual(David, obj)
-        self.assertEqual("madsen", prop)
-
-        with self.assertRaises(ValueError) as cm:
-            utils.infer_or_require_name(utils.get_assigned_name)()
-
-        self.assertEqual(
-            "Argument 'name' is required when the platform does not provide bytecode instructions.",
-            cm.exception.args[0])
 
     def test_get_instructions(self):
         def outer(depth: int):
