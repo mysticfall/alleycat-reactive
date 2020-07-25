@@ -20,12 +20,12 @@ class UtilsTest(unittest.TestCase):
         frame = outer(1).value_or(None)
 
         self.assertIsNotNone(frame)
-        self.assertDictEqual(frame.f_locals, {"chloe": "price", "depth": 1})
+        self.assertDictEqual({"chloe": "price", "depth": 1}, frame.f_locals)
 
         frame = outer(2).value_or(None)
 
         self.assertIsNotNone(frame)
-        self.assertDictEqual(frame.f_locals, {"maxine": "caulfield", "depth": 2, "inner": inner})
+        self.assertDictEqual({"maxine": "caulfield", "depth": 2, "inner": inner}, frame.f_locals)
 
     def test_get_assigned_name(self):
         def fun():
@@ -39,7 +39,7 @@ class UtilsTest(unittest.TestCase):
 
             value2 = "1"
 
-        self.assertEqual(Blackwell().kate_marsh, "kate_marsh")
+        self.assertEqual("kate_marsh", Blackwell().kate_marsh)
 
     def test_get_property_reference(self):
         def fun(_):
@@ -58,8 +58,8 @@ class UtilsTest(unittest.TestCase):
 
         (obj, prop) = fun(life.is_strange)
 
-        self.assertEqual(obj, life)
-        self.assertEqual(prop, "is_strange")
+        self.assertEqual(life, obj)
+        self.assertEqual("is_strange", prop)
 
     def test_infer_or_require_name(self):
         def is_not_fun():
@@ -74,19 +74,19 @@ class UtilsTest(unittest.TestCase):
         class David:
             madsen = is_not_fun()
 
-        self.assertEqual(David.madsen, "madsen")
+        self.assertEqual("madsen", David.madsen)
 
         (obj, prop) = is_step_douche(David.madsen)
 
-        self.assertEqual(obj, David)
-        self.assertEqual(prop, "madsen")
+        self.assertEqual(David, obj)
+        self.assertEqual("madsen", prop)
 
         with self.assertRaises(ValueError) as cm:
             utils.infer_or_require_name(utils.get_assigned_name)()
 
         self.assertEqual(
-            cm.exception.args[0],
-            "Argument 'name' is required when the platform does not provide bytecode instructions.")
+            "Argument 'name' is required when the platform does not provide bytecode instructions.",
+            cm.exception.args[0])
 
     def test_get_instructions(self):
         def outer(depth: int):
@@ -96,9 +96,9 @@ class UtilsTest(unittest.TestCase):
         def inner(depth: int):
             return utils.get_current_frame(depth).map(utils.get_instructions).unwrap()
 
-        self.assertEqual(next(outer(1)).opname, "RETURN_VALUE")
-        self.assertEqual(next(outer(2)).opname, "RETURN_VALUE")
-        self.assertEqual(next(outer(3)).opname, "CALL_FUNCTION")
+        self.assertEqual("RETURN_VALUE", next(outer(1)).opname)
+        self.assertEqual("RETURN_VALUE", next(outer(2)).opname)
+        self.assertEqual("CALL_FUNCTION", next(outer(3)).opname)
 
 
 if __name__ == '__main__':

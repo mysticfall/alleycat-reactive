@@ -21,15 +21,15 @@ class ReactiveObjectTest(unittest.TestCase):
         for i in range(1, 5):
             fixture.value = i
 
-        self.assertEqual(values, [0, 1, 2, 3, 4])
+        self.assertEqual([0, 1, 2, 3, 4], values)
 
     def test_dispose(self):
         with Fixture() as obj:
-            self.assertEqual(obj.disposed, False)
+            self.assertEqual(False, obj.disposed)
 
             obj.dispose()
 
-            self.assertEqual(obj.disposed, True)
+            self.assertEqual(True, obj.disposed)
 
     def test_dispose_event(self):
         with Fixture() as obj:
@@ -43,14 +43,14 @@ class ReactiveObjectTest(unittest.TestCase):
 
             obj.dispose()
 
-            self.assertEqual(disposed, True)
+            self.assertEqual(True, disposed)
 
     def test_complete_before_dispose(self):
         with Fixture() as obj:
             completed = False
 
             def on_complete():
-                self.assertEqual(obj.disposed, False)
+                self.assertEqual(False, obj.disposed)
 
                 nonlocal completed
                 completed = True
@@ -59,19 +59,19 @@ class ReactiveObjectTest(unittest.TestCase):
 
             obj.dispose()
 
-            self.assertEqual(completed, True)
+            self.assertEqual(True, completed)
 
     def test_access_after_dispose(self):
         def assert_error(fun: Callable[[], Any], expected: str):
             with self.assertRaises(Exception) as cm:
                 fun()
 
-            self.assertEqual(cm.exception.args[0], expected)
+            self.assertEqual(expected, cm.exception.args[0])
 
         with Fixture() as obj:
             obj.dispose()
 
-            self.assertEqual(obj.value, 0)
+            self.assertEqual(0, obj.value)
 
             def modify_value():
                 obj.value = 10

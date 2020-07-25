@@ -17,8 +17,8 @@ class FunctionsTest(unittest.TestCase):
 
         fixture = Fixture()
 
-        self.assertEqual(fixture.mary, 100)
-        self.assertEqual(fixture.poppins, "Supercalifragilisticexpialidocious")
+        self.assertEqual(100, fixture.mary)
+        self.assertEqual("Supercalifragilisticexpialidocious", fixture.poppins)
 
         with self.assertRaises(AttributeError) as cm:
             fixture.mary = 10
@@ -27,8 +27,8 @@ class FunctionsTest(unittest.TestCase):
 
         fixture.poppins = "Feed the Birds"
 
-        self.assertEqual(fixture.mary, 100)
-        self.assertEqual(fixture.poppins, "Feed the Birds")
+        self.assertEqual(100, fixture.mary)
+        self.assertEqual("Feed the Birds", fixture.poppins)
 
     def test_observe(self):
         class Fixture(ReactiveObject):
@@ -47,24 +47,24 @@ class FunctionsTest(unittest.TestCase):
 
         fixture.poppins = "Feed the Birds"
 
-        self.assertEqual(songs, ["Supercalifragilisticexpialidocious", "Feed the Birds"])
+        self.assertEqual(["Supercalifragilisticexpialidocious", "Feed the Birds"], songs)
 
         cancel.dispose()
 
         fixture.poppins = "A Spoonful of Sugar"
 
-        self.assertEqual(songs, ["Supercalifragilisticexpialidocious", "Feed the Birds"])
+        self.assertEqual(["Supercalifragilisticexpialidocious", "Feed the Birds"], songs)
 
         # This time, subscribe using the name.
         observe(fixture, "poppins").subscribe(value_changed)
 
         fixture.poppins = "Chim Chim Cheree"
 
-        self.assertEqual(songs, [
+        self.assertEqual([
             "Supercalifragilisticexpialidocious",
             "Feed the Birds",
             "A Spoonful of Sugar",
-            "Chim Chim Cheree"])
+            "Chim Chim Cheree"], songs)
 
     def test_from_property(self):
         class Wolf(ReactiveObject):
@@ -85,11 +85,11 @@ class FunctionsTest(unittest.TestCase):
         with SuperWolf() as wolf:
             observe(wolf.name).subscribe(value_changed)
 
-            self.assertEqual(text, "Who's afraid of a big bad wolf?")
+            self.assertEqual("Who's afraid of a big bad wolf?", text)
 
             wolf.name = "cat"
 
-            self.assertEqual(text, "Who's afraid of a big bad cat?")
+            self.assertEqual("Who's afraid of a big bad cat?", text)
 
 
 if __name__ == '__main__':

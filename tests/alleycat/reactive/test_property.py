@@ -27,31 +27,31 @@ class ReactivePropertyTest(unittest.TestCase):
             # noinspection PyTypeChecker
             ReactiveProperty(None)
 
-        self.assertEqual(cm.exception.args[0], "Name is a required argument.")
+        self.assertEqual("Name is a required argument.", cm.exception.args[0])
 
-        self.assertEqual(ReactiveProperty("value").name, "value")
-        self.assertEqual(ReactiveProperty("value", Maybe.from_value(3)).init_value, Some(3))
-        self.assertEqual(ReactiveProperty("value", Maybe.from_value("test")).init_value, Some("test"))
-        self.assertEqual(ReactiveProperty("value", read_only=True).read_only, True)
-        self.assertEqual(ReactiveProperty("value", read_only=False).read_only, False)
+        self.assertEqual("value", ReactiveProperty("value").name)
+        self.assertEqual(Some(3), ReactiveProperty("value", Maybe.from_value(3)).init_value)
+        self.assertEqual(Some("test"), ReactiveProperty("value", Maybe.from_value("test")).init_value)
+        self.assertEqual(True, ReactiveProperty("value", read_only=True).read_only)
+        self.assertEqual(False, ReactiveProperty("value", read_only=False).read_only)
 
         pre_modifiers = deque([lambda obj, v: v + obj.increment])
         post_modifiers = deque([lambda obj, obs: obs.pipe(ops.map(lambda v: v * obj.multiplier))])
 
-        self.assertEqual(ReactiveProperty("value", pre_modifiers=pre_modifiers).pre_modifiers, pre_modifiers)
-        self.assertEqual(ReactiveProperty("value", post_modifiers=post_modifiers).post_modifiers, post_modifiers)
+        self.assertEqual(pre_modifiers, ReactiveProperty("value", pre_modifiers=pre_modifiers).pre_modifiers)
+        self.assertEqual(post_modifiers, ReactiveProperty("value", post_modifiers=post_modifiers).post_modifiers)
 
     def test_read_value(self):
         prop = ReactiveProperty("name", Some("test"))
 
-        self.assertEqual(prop.__get__({}), "test")
+        self.assertEqual("test", prop.__get__({}))
 
     def test_write_value(self):
         prop = ReactiveProperty("name", Some("ABC"))
 
         prop.__set__(self.fixture, "123")
 
-        self.assertEqual(prop.__get__(self.fixture), "123")
+        self.assertEqual("123", prop.__get__(self.fixture))
 
     def test_read_only(self):
         prop = ReactiveProperty("waltzing", Some("matilda"), read_only=True)
@@ -59,7 +59,7 @@ class ReactivePropertyTest(unittest.TestCase):
         with self.assertRaises(AttributeError) as cm:
             prop.__set__(self.fixture, "ants")
 
-        self.assertEqual(cm.exception.args[0], "Cannot modify a read-only property.")
+        self.assertEqual("Cannot modify a read-only property.", cm.exception.args[0])
 
     def test_lazy_init(self):
         prop = ReactiveProperty("name")
@@ -67,11 +67,11 @@ class ReactivePropertyTest(unittest.TestCase):
         with self.assertRaises(AttributeError) as cm:
             ReactiveProperty("name").__get__({})
 
-        self.assertEqual(cm.exception.args[0], "Property 'name' is not initialized yet.")
+        self.assertEqual("Property 'name' is not initialized yet.", cm.exception.args[0])
 
         prop.__set__(self.fixture, "simple")
 
-        self.assertEqual(prop.__get__(self.fixture), "simple")
+        self.assertEqual("simple", prop.__get__(self.fixture))
 
     def test_observe(self):
         prop = ReactiveProperty("name", Some("Do, Re, Mi"))
@@ -91,7 +91,7 @@ class ReactivePropertyTest(unittest.TestCase):
         # By now, you should be able to hum the rest of the song, if you are cultured :P
         prop.__set__(self.fixture, "ABC")
 
-        self.assertEqual(last_changed, ["Do, Re, Mi", "ABC"])
+        self.assertEqual(["Do, Re, Mi", "ABC"], last_changed)
 
     def test_lazy_observe(self):
         prop = ReactiveProperty("name")
@@ -110,20 +110,20 @@ class ReactivePropertyTest(unittest.TestCase):
 
         prop.__set__(self.fixture, "ABC")
 
-        self.assertEqual(last_changed, ["ABC"])
+        self.assertEqual(["ABC"], last_changed)
 
     def test_multiple_properties(self):
         name = ReactiveProperty("name", Some("Slim Shady"))
         age = ReactiveProperty("age", Some(26))
 
-        self.assertEqual(name.__get__(self.fixture), "Slim Shady")
-        self.assertEqual(age.__get__(self.fixture), 26)
+        self.assertEqual("Slim Shady", name.__get__(self.fixture))
+        self.assertEqual(26, age.__get__(self.fixture))
 
         name.__set__(self.fixture, "The real Slim Shady")
         age.__set__(self.fixture, 47)  # Yeah, time flies fast.
 
-        self.assertEqual(name.__get__(self.fixture), "The real Slim Shady")
-        self.assertEqual(age.__get__(self.fixture), 47)
+        self.assertEqual("The real Slim Shady", name.__get__(self.fixture))
+        self.assertEqual(47, age.__get__(self.fixture))
 
     def test_access_after_dispose(self):
         value = ReactiveProperty("value")
@@ -131,13 +131,13 @@ class ReactivePropertyTest(unittest.TestCase):
 
         data = value._get_data(self.fixture)
 
-        self.assertIs(data.disposed, False)
+        self.assertIs(False, data.disposed)
 
         data.dispose()
 
-        self.assertIs(data.disposed, True)
+        self.assertIs(True, data.disposed)
 
-        self.assertEqual(value.__get__(self.fixture), 1)
+        self.assertEqual(1, value.__get__(self.fixture))
 
         expected = "Property 'value' has been disposed."
 
@@ -145,7 +145,7 @@ class ReactivePropertyTest(unittest.TestCase):
             with self.assertRaises(AttributeError) as cm:
                 fun()
 
-            self.assertEqual(cm.exception.args[0], expected)
+            self.assertEqual(expected, cm.exception.args[0])
 
         assert_attr_error(lambda: value.__set__(self.fixture, 1))
         assert_attr_error(lambda: value.observable(self.fixture))
@@ -157,8 +157,8 @@ class ReactivePropertyTest(unittest.TestCase):
 
         prop = Fixture.value
 
-        self.assertEqual(type(prop), ReactiveProperty)
-        self.assertEqual(prop.name, "value")
+        self.assertEqual(ReactiveProperty, type(prop))
+        self.assertEqual("value", prop.name)
 
 
 if __name__ == '__main__':
