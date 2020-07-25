@@ -5,6 +5,24 @@ from alleycat.reactive import ReactiveObject, observe, from_value
 
 
 class ReactiveObjectTest(unittest.TestCase):
+    def test_observe(self):
+        class Counter(ReactiveObject):
+            value = from_value(0)
+
+        fixture = Counter()
+
+        values = []
+
+        def value_changed(value):
+            values.append(value)
+
+        fixture.observe("value").subscribe(value_changed)
+
+        for i in range(1, 5):
+            fixture.value = i
+
+        self.assertEqual(values, [0, 1, 2, 3, 4])
+
     def test_dispose(self):
         with Fixture() as obj:
             self.assertEqual(obj.disposed, False)
@@ -64,7 +82,7 @@ class ReactiveObjectTest(unittest.TestCase):
 
 
 class Fixture(ReactiveObject):
-    value: int = from_value(0)
+    value = from_value(0)
 
     def __init__(self, init_value=0):
         self.value = init_value

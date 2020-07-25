@@ -3,7 +3,7 @@ from typing import TypeVar, Optional, Deque
 from returns.maybe import Maybe, Some
 from rx import Observable
 
-from . import PreModifier, PostModifier
+from . import PreModifier, PostModifier, ReactiveValue
 from . import utils
 from .property import ReactiveProperty
 
@@ -49,10 +49,12 @@ def observe(obj, name: Optional[str] = None) -> Observable:
         .map(lambda n: (obj, n)) \
         .or_else_call(utils.infer_or_require_name(utils.get_property_reference, 3))
 
-    if not hasattr(target, ReactiveProperty.KEY):
+    prop: ReactiveValue = getattr(type(target), key)
+
+    if prop is None or not isinstance(prop, ReactiveValue):
         raise AttributeError(f"Unknown property name: '{key}'.")
 
-    return getattr(target, ReactiveProperty.KEY)[key].observable
+    return prop.observable(target)
 
 
 def dispose(obj) -> None:

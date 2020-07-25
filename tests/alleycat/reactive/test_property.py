@@ -53,6 +53,14 @@ class ReactivePropertyTest(unittest.TestCase):
 
         self.assertEqual(prop.__get__(self.fixture), "123")
 
+    def test_read_only(self):
+        prop = ReactiveProperty("waltzing", Some("matilda"), read_only=True)
+
+        with self.assertRaises(AttributeError) as cm:
+            prop.__set__(self.fixture, "ants")
+
+        self.assertEqual(cm.exception.args[0], "Cannot modify a read-only property.")
+
     def test_lazy_init(self):
         prop = ReactiveProperty("name")
 
