@@ -5,7 +5,7 @@ from typing import TypeVar, List, Callable, Any
 from returns.maybe import Maybe, Some
 from rx import operators as ops
 
-from alleycat.reactive import ReactiveProperty
+from alleycat.reactive import ReactiveProperty, from_value
 
 T = TypeVar("T")
 
@@ -142,6 +142,15 @@ class ReactivePropertyTest(unittest.TestCase):
         assert_attr_error(lambda: value.__set__(self.fixture, 1))
         assert_attr_error(lambda: value.observable(self.fixture))
         assert_attr_error(lambda: data.dispose())
+
+    def test_class_attribute(self):
+        class Fixture:
+            value = from_value(True)
+
+        prop = Fixture.value
+
+        self.assertEqual(type(prop), ReactiveProperty)
+        self.assertEqual(prop.name, "value")
 
 
 if __name__ == '__main__':

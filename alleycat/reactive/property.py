@@ -88,7 +88,7 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
 
     def __set__(self, obj: Any, value: T) -> None:
         if obj is None:
-            return None
+            raise AttributeError("Cannot modify property of a None object.")
 
         if self.read_only and self.init_value is not None:
             raise AttributeError("Cannot modify a read-only property.")
