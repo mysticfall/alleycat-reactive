@@ -1,7 +1,7 @@
 from types import FrameType
 from typing import TypeVar, Optional, Deque, Callable
 
-from returns.maybe import Maybe, Some
+from returns.maybe import Maybe
 from rx import Observable
 
 from . import PreModifier, PostModifier, ReactiveValue
@@ -11,8 +11,8 @@ from .property import ReactiveProperty
 T = TypeVar("T")
 
 
-def from_value(value: T, read_only=False) -> ReactiveProperty[T]:
-    return ReactiveProperty(Some(value), read_only)
+def from_value(value: Optional[T] = None, read_only=False) -> ReactiveProperty[T]:
+    return ReactiveProperty(Maybe.from_value(value), read_only)
 
 
 def from_property(
