@@ -64,8 +64,8 @@ class FunctionsTest(unittest.TestCase):
             info = from_view()
 
             def __init__(self):
-                # TODO: This is not really a good usage example. We should look into more practical use cases
-                #  and establish best practices once we are dont implementing the core features.
+                # TODO: This is not really a good usage example. We should look into more practical
+                #  use cases and establish best practices once we are done implementing the core features.
                 self.info = observe(self.song).pipe(
                     ops.scan(lambda total, _: total + 1, 0),
                     ops.map(lambda count: f"Mary has sung {count} song(s)."),
