@@ -2,7 +2,7 @@ import unittest
 from collections import deque
 from typing import TypeVar, List, Callable, Any
 
-from returns.maybe import Maybe, Some
+from returns.maybe import Some
 from rx import operators as ops
 
 from alleycat.reactive import ReactiveProperty, from_value
@@ -14,8 +14,8 @@ T = TypeVar("T")
 class ReactivePropertyTest(unittest.TestCase):
 
     def test_initialization(self):
-        self.assertEqual(Some(3), ReactiveProperty(Maybe.from_value(3)).init_value)
-        self.assertEqual(Some("test"), ReactiveProperty(Maybe.from_value("test")).init_value)
+        self.assertEqual(Some(3), ReactiveProperty(Some(3)).init_value)
+        self.assertEqual(Some("test"), ReactiveProperty(Some("test")).init_value)
         self.assertEqual(True, ReactiveProperty(read_only=True).read_only)
         self.assertEqual(False, ReactiveProperty(read_only=False).read_only)
 
