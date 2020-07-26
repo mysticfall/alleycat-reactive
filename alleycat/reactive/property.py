@@ -22,10 +22,9 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
                  pre_modifiers: Optional[Deque[PreModifier]] = None,
                  post_modifiers: Optional[Deque[PostModifier]] = None) -> None:
 
-        super().__init__()
+        super().__init__(read_only=read_only)
 
         self.init_value = init_value
-        self.read_only = read_only
 
         self.pre_modifiers = deque() if pre_modifiers is None else pre_modifiers
         self.post_modifiers = deque() if post_modifiers is None else post_modifiers
@@ -110,15 +109,8 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
 
         return cast(ReactiveProperty.PropertyData, super()._get_data(obj))
 
-    def __set__(self, obj: Any, value: T) -> None:
-        if obj is None:
-            raise AttributeError("Cannot modify property of a None object.")
-
-        data = self._get_data(obj)
-
-        assert data is not None
-
-        if self.read_only and data.initialized:
-            raise AttributeError("Cannot modify a read-only property.")
+    def _set_value(self, obj: Any, data: ReactiveValue.Data, value: Any) -> None:
+        assert obj is not None
+        assert isinstance(data, ReactiveProperty.PropertyData)
 
         data.value = value

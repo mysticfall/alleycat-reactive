@@ -20,8 +20,9 @@ class ReactiveValue(Generic[T], ABC):
 
     __slots__ = ()
 
-    def __init__(self) -> None:
+    def __init__(self, read_only=False) -> None:
         self._name: Optional[str] = None
+        self.read_only = read_only
 
     @property
     def name(self) -> Optional[str]:
@@ -42,7 +43,20 @@ class ReactiveValue(Generic[T], ABC):
 
         return self._get_data(obj).value
 
-    class Data(Generic[U], Disposable, ABC):
+    def __set__(self, obj: Any, value: Any) -> None:
+        if obj is None:
+            raise AttributeError("Cannot modify property of a None object.")
+
+        data = self._get_data(obj)
+
+        assert data is not None
+
+        if self.read_only and data.initialized:
+            raise AttributeError("Cannot modify a read-only property.")
+
+        self._set_value(obj, data, value)
+
+    class Data(Generic[U], Disposable):
 
         def __init__(self, name: str, observable: Maybe[Observable]):
             assert str is not None
@@ -54,12 +68,8 @@ class ReactiveValue(Generic[T], ABC):
 
             self._initialized = observable != Nothing
             self._disposed = False
-
-            if observable is Nothing:
-                self._subject = BehaviorSubject(rx.empty())
-                self._observable = self._subject.pipe(ops.switch_latest())
-            else:
-                self._observable = observable.unwrap()
+            self._subject = BehaviorSubject(observable.unwrap() if observable != Nothing else rx.empty())
+            self._observable = self._subject.pipe(ops.switch_latest())
 
             def update(value):
                 if not self.initialized:
@@ -140,3 +150,7 @@ class ReactiveValue(Generic[T], ABC):
             .bind(lambda v: safe(lambda: v[self.name])().rescue(init_data(v))) \
             .fix(raise_exception) \
             .unwrap()
+
+    @abstractmethod
+    def _set_value(self, obj: Any, data: Data[T], value: Any) -> None:
+        pass
