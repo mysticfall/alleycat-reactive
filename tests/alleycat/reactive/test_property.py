@@ -48,10 +48,26 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_read_only(self):
         class Fixture:
-            value = ReactiveProperty(Some("waltzing"), read_only=True)
+            value = ReactiveProperty(Some("Waltzing"), read_only=True)
 
         with self.assertRaises(AttributeError) as cm:
-            Fixture().value = "matilda"
+            Fixture().value = "Matilda"
+
+        self.assertEqual("Cannot modify a read-only property.", cm.exception.args[0])
+
+    def test_lazy_read_only(self):
+        class Fixture:
+            value = ReactiveProperty(read_only=True)
+
+            def __init__(self):
+                self.value = "Lazy"
+
+        fixture = Fixture()
+
+        self.assertEqual(fixture.value, "Lazy")
+
+        with self.assertRaises(AttributeError) as cm:
+            fixture.value = "Fox"
 
         self.assertEqual("Cannot modify a read-only property.", cm.exception.args[0])
 

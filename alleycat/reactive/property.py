@@ -114,7 +114,11 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
         if obj is None:
             raise AttributeError("Cannot modify property of a None object.")
 
-        if self.read_only and self.init_value is not None:
+        data = self._get_data(obj)
+
+        assert data is not None
+
+        if self.read_only and data.initialized:
             raise AttributeError("Cannot modify a read-only property.")
 
-        self._get_data(obj).value = value
+        data.value = value
