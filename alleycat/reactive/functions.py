@@ -7,12 +7,17 @@ from rx import Observable
 from . import PreModifier, PostModifier, ReactiveValue
 from . import utils
 from .property import ReactiveProperty
+from .view import ReactiveView
 
 T = TypeVar("T")
 
 
 def from_value(value: Optional[T] = None, read_only=False) -> ReactiveProperty[T]:
     return ReactiveProperty(Maybe.from_value(value), read_only)
+
+
+def from_view(value: Optional[Observable] = None, read_only=False) -> ReactiveView[T]:
+    return ReactiveView(Maybe.from_value(value), read_only)
 
 
 def from_property(
