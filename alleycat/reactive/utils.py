@@ -3,9 +3,9 @@ import inspect
 from dis import Instruction
 from itertools import dropwhile, takewhile
 from types import FrameType
-from typing import Tuple, Any, TypeVar, List, Iterator
+from typing import Tuple, Any, TypeVar, Iterator, Iterable
 
-from returns.maybe import Maybe, Nothing
+from returns.maybe import Maybe, Nothing, Some
 from returns.pipeline import flow
 
 T = TypeVar("T")
@@ -25,17 +25,41 @@ def get_property_reference(frame: FrameType) -> Maybe[Tuple[Any, str]]:
     if frame is None:
         raise ValueError("Argument 'frame' is required.")
 
+    def collect(inst: Iterable[Instruction]):
+        for i in inst:
+            if i.opname == "LOAD_FAST" or i.opname == "LOAD_DEREF":
+                yield i
+                return
+            yield i
+
+    def unwrap(obj: Any, segments: Iterator[str]) -> Maybe[Any]:
+        result: Maybe[Any]
+
+        try:
+            key = next(segments)
+
+            if type(obj) == dict:
+                result = unwrap(obj[key], segments)
+            else:
+                result = unwrap(getattr(obj, key), segments)
+        except (AttributeError, KeyError):
+            result = Nothing
+        except StopIteration:
+            result = Some(obj)
+
+        return result
+
     try:
-        stack: List[Instruction] = flow(
+        *path, attr = flow(
             dis.get_instructions(frame.f_code),
             lambda s: takewhile(lambda i: i.offset != frame.f_lasti, s),
-            lambda s: list(s)[-2:])
+            lambda s: reversed(list(s)),
+            lambda s: list(collect(s)),
+            lambda s: reversed(s),
+            lambda s: map(lambda i: str(i.argval), s))
 
-        variable = Maybe.from_value(stack[0]).map(lambda v: str(v.argval))
-        attr = Maybe.from_value(stack[1]).map(lambda a: str(a.argval))
-
-        return variable.bind(lambda v: attr.map(lambda a: (frame.f_locals.get(v), a)))
-    except StopIteration:
+        return unwrap(frame.f_locals, iter(path)).map(lambda obj: (obj, attr))
+    except (StopIteration, ValueError):
         pass
 
     return Nothing
