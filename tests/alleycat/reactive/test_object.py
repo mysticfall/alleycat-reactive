@@ -3,7 +3,7 @@ from typing import Any, Callable
 
 from rx import operators as ops
 
-from alleycat.reactive import ReactiveObject, observe, from_value, from_view
+from alleycat.reactive import ReactiveObject, observe, from_value, from_observable
 
 
 class ReactiveObjectTest(unittest.TestCase):
@@ -96,7 +96,7 @@ class ReactiveObjectTest(unittest.TestCase):
 class Fixture(ReactiveObject):
     value = from_value(0)
 
-    double = from_view()
+    double = from_observable()
 
     def __init__(self):
         self.double = observe(self.value).pipe(ops.map(lambda v: v * 2))

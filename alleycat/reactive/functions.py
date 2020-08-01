@@ -18,7 +18,7 @@ def from_value(value: Optional[T] = None, read_only=False) -> ReactiveProperty[T
     return ReactiveProperty(Maybe.from_value(value), read_only)
 
 
-def from_view(value: Optional[Observable] = None, read_only=False) -> ReactiveView:
+def from_observable(value: Optional[Observable] = None, read_only=False) -> ReactiveView:
     init_value: RequiresContext[Observable, Any] = \
         RequiresContext(lambda _: Maybe.from_value(value).value_or(rx.empty()))
 

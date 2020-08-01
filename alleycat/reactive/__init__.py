@@ -12,5 +12,5 @@ from .value import ReactiveValue as ReactiveValue
 from .view import ReactiveView as ReactiveView
 from .property import ReactiveProperty as ReactiveProperty
 from .functions import dispose as dispose, from_property as from_property, from_value as from_value, \
-    from_view as from_view, observe as observe
+    from_observable as from_observable, observe as observe
 from .object import ReactiveObject as ReactiveObject

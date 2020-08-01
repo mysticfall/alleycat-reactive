@@ -5,7 +5,7 @@ import rx
 from rx import operators as ops
 from rx.subject import BehaviorSubject
 
-from alleycat.reactive import ReactiveObject, from_value, observe, from_property, from_view
+from alleycat.reactive import ReactiveObject, from_value, observe, from_property, from_observable
 
 
 # noinspection DuplicatedCode
@@ -31,13 +31,13 @@ class FunctionsTest(unittest.TestCase):
         self.assertEqual(100, fixture.mary)
         self.assertEqual("Feed the Birds", fixture.poppins)
 
-    def test_from_view(self):
+    def test_from_observable(self):
         songs = BehaviorSubject("Supercalifragilisticexpialidocious")
 
         class Fixture(ReactiveObject):
-            mary = from_view(rx.of(100), read_only=True)
+            mary = from_observable(rx.of(100), read_only=True)
 
-            poppins = from_view()
+            poppins = from_observable()
 
             def __init__(self):
                 self.poppins = songs
@@ -61,7 +61,7 @@ class FunctionsTest(unittest.TestCase):
         class MaryPoppins(ReactiveObject):
             song = from_value("Supercalifragilisticexpialidocious")
 
-            info = from_view()
+            info = from_observable()
 
             def __init__(self):
                 # TODO: This is not really a good usage example. We should look into more practical
