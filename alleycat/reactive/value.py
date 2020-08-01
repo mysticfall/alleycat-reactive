@@ -77,7 +77,7 @@ class ReactiveValue(Generic[T], ABC):
 
                 self._value = value  # We don't use Some(value) here to avoid excessive object allocations.
 
-            self._cancel_update = self.observable.subscribe(update, lambda x: print(x))
+            self._cancel_update = self.observable.subscribe(update, raise_exception)
 
         def _check_disposed(self) -> None:
             if self.disposed:
