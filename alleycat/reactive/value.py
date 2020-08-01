@@ -2,9 +2,8 @@ from abc import ABC, abstractmethod
 from functools import partial
 from typing import TypeVar, Generic, Callable, Optional, Union, Any
 
-import rx
+from returns.context import RequiresContext
 from returns.functions import raise_exception
-from returns.maybe import Maybe, Nothing
 from returns.result import safe, Success
 from rx import Observable
 from rx import operators as ops
@@ -18,11 +17,19 @@ U = TypeVar("U")
 class ReactiveValue(Generic[T], ABC):
     KEY = "_rx_value"
 
+    context: RequiresContext[Any, "ReactiveValue.Data[T]"]
+
     __slots__ = ()
 
     def __init__(self, read_only=False) -> None:
         self._name: Optional[str] = None
         self.read_only = read_only
+
+        self.context = RequiresContext(lambda obj: self._get_data(obj))
+
+        # Optimization to prevent an object allocation with every value/observable reference.
+        self._observable_context = self.context.map(lambda data: data.observable)
+        self._value_context = self.context.map(lambda data: data.value)
 
     @property
     def name(self) -> Optional[str]:
@@ -32,7 +39,7 @@ class ReactiveValue(Generic[T], ABC):
         if obj is None:
             raise ValueError("Cannot observe a None object.")
 
-        return self._get_data(obj).observable
+        return self._observable_context(obj)
 
     def __set_name__(self, obj, name):
         self._name = name
@@ -41,7 +48,7 @@ class ReactiveValue(Generic[T], ABC):
         if obj is None:
             return self
 
-        return self._get_data(obj).value
+        return self._value_context(obj)
 
     def __set__(self, obj: Any, value: Any) -> None:
         if obj is None:
@@ -58,7 +65,7 @@ class ReactiveValue(Generic[T], ABC):
 
     class Data(Generic[U], Disposable):
 
-        def __init__(self, name: str, observable: Maybe[Observable]):
+        def __init__(self, name: str, observable: Observable):
             assert str is not None
             assert observable is not None
 
@@ -66,9 +73,9 @@ class ReactiveValue(Generic[T], ABC):
 
             self._value: Optional[U] = None
 
-            self._initialized = observable != Nothing
+            self._initialized = False
             self._disposed = False
-            self._subject = BehaviorSubject(observable.unwrap() if observable != Nothing else rx.empty())
+            self._subject = BehaviorSubject(observable)
             self._observable = self._subject.pipe(ops.switch_latest())
 
             def update(value):

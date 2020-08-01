@@ -2,7 +2,8 @@ from collections import deque
 from functools import reduce, partial
 from typing import TypeVar, Generic, Callable, Optional, Deque, Any, cast
 
-from returns.maybe import Maybe, Nothing, Some
+import rx
+from returns.maybe import Maybe, Nothing
 from rx import Observable
 from rx.subject import BehaviorSubject
 
@@ -48,12 +49,14 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
 
             init_value.map(pre_modifier).map(lambda v: BehaviorSubject(v))
 
-            obs: Maybe[Observable] = Nothing
+            obs: Observable
 
             if init_value != Nothing:
                 self._property = BehaviorSubject(self._pre_modifier(init_value.unwrap()))
 
-                obs = Some(self._post_modifier(self._property))
+                obs = self._post_modifier(self._property)
+            else:
+                obs = rx.empty()
 
             super().__init__(name, obs)
 

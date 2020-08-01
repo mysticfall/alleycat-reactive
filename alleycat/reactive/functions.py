@@ -1,6 +1,8 @@
 from types import FrameType
-from typing import TypeVar, Optional, Deque, Callable
+from typing import TypeVar, Optional, Deque, Callable, Any
 
+import rx
+from returns.context import RequiresContext
 from returns.maybe import Maybe
 from rx import Observable
 
@@ -16,8 +18,11 @@ def from_value(value: Optional[T] = None, read_only=False) -> ReactiveProperty[T
     return ReactiveProperty(Maybe.from_value(value), read_only)
 
 
-def from_view(value: Optional[Observable] = None, read_only=False) -> ReactiveView[T]:
-    return ReactiveView(Maybe.from_value(value), read_only)
+def from_view(value: Optional[Observable] = None, read_only=False) -> ReactiveView:
+    init_value: RequiresContext[Observable, Any] = \
+        RequiresContext(lambda _: Maybe.from_value(value).value_or(rx.empty()))
+
+    return ReactiveView(init_value, read_only)
 
 
 def from_property(

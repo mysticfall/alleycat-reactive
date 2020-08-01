@@ -2,7 +2,7 @@ import unittest
 from typing import List, Callable, Any
 
 import rx
-from returns.maybe import Some
+from returns.context import RequiresContext
 from rx.subject import BehaviorSubject
 
 from alleycat.reactive import ReactiveView, from_view
@@ -12,15 +12,15 @@ from alleycat.reactive import ReactiveView, from_view
 class ReactiveViewTest(unittest.TestCase):
 
     def test_initialization(self):
-        init_obs = rx.empty()
+        init_value = RequiresContext.from_value(rx.empty())
 
-        self.assertEqual(Some(init_obs), ReactiveView(Some(init_obs)).init_observable)
-        self.assertEqual(True, ReactiveView(read_only=True).read_only)
-        self.assertEqual(False, ReactiveView(read_only=False).read_only)
+        self.assertEqual(init_value, ReactiveView(init_value).init_value)
+        self.assertEqual(True, ReactiveView(init_value, True).read_only)
+        self.assertEqual(False, ReactiveView(init_value, False).read_only)
 
     def test_name_inference(self):
         class Fixture:
-            value = ReactiveView(Some(rx.of(1, 2, 3)))
+            value = ReactiveView(RequiresContext.from_value(rx.of(1, 2, 3)))
 
         self.assertEqual(Fixture.value.name, "value")
 
@@ -28,7 +28,7 @@ class ReactiveViewTest(unittest.TestCase):
         subject = BehaviorSubject(1)
 
         class Fixture:
-            value = ReactiveView(Some(subject))
+            value = ReactiveView(RequiresContext.from_value(subject))
 
         self.assertEqual(1, Fixture().value)
 
@@ -42,7 +42,7 @@ class ReactiveViewTest(unittest.TestCase):
 
     def test_write_value(self):
         class Fixture:
-            value = ReactiveView(Some(rx.of(1)))
+            value = ReactiveView(RequiresContext.from_value(rx.of(1)))
 
         fixture = Fixture()
         fixture.value = rx.of(2, 3)
@@ -51,50 +51,18 @@ class ReactiveViewTest(unittest.TestCase):
 
     def test_read_only(self):
         class Fixture:
-            value = ReactiveView(Some(rx.of(1)), read_only=True)
+            value = ReactiveView(RequiresContext.from_value(rx.of(1)), read_only=True)
 
         with self.assertRaises(AttributeError) as cm:
             Fixture().value = rx.of(2, 3)
 
         self.assertEqual("Cannot modify a read-only property.", cm.exception.args[0])
 
-    def test_lazy_read_only(self):
-        class Fixture:
-            value = ReactiveView(read_only=True)
-
-            def __init__(self):
-                self.value = rx.of("Lazy")
-
-        fixture = Fixture()
-
-        self.assertEqual(fixture.value, "Lazy")
-
-        with self.assertRaises(AttributeError) as cm:
-            fixture.value = "Fox"
-
-        self.assertEqual("Cannot modify a read-only property.", cm.exception.args[0])
-
-    def test_lazy_init(self):
-        class Fixture:
-            value = ReactiveView()
-
-        fixture = Fixture()
-
-        with self.assertRaises(AttributeError) as cm:
-            # noinspection PyStatementEffect
-            fixture.value
-
-        self.assertEqual("Property 'value' is not initialized yet.", cm.exception.args[0])
-
-        fixture.value = rx.of("simple")
-
-        self.assertEqual("simple", fixture.value)
-
     def test_observe(self):
         subject = BehaviorSubject("Do, Re, Mi")
 
         class Fixture:
-            value = ReactiveView(Some(subject))
+            value = ReactiveView(RequiresContext.from_value(subject))
 
         fixture = Fixture()
 
@@ -115,35 +83,13 @@ class ReactiveViewTest(unittest.TestCase):
 
         self.assertEqual(["Do, Re, Mi", "ABC"], last_changed)
 
-    def test_lazy_observe(self):
-        class Fixture:
-            value = ReactiveView()
-
-        fixture = Fixture()
-
-        obs = Fixture.value.observable(fixture)
-
-        self.assertIsNotNone(obs)
-
-        last_changed: List[str] = []
-
-        def value_changed(value):
-            nonlocal last_changed
-            last_changed.append(value)
-
-        obs.subscribe(value_changed)
-
-        fixture.value = rx.of("ABC")
-
-        self.assertEqual(["ABC"], last_changed)
-
     def test_multiple_properties(self):
         name_subject = BehaviorSubject("Slim Shady")
         age_subject = BehaviorSubject(26)
 
         class Fixture:
-            name = ReactiveView(Some(name_subject))
-            age = ReactiveView()
+            name = ReactiveView(RequiresContext.from_value(name_subject))
+            age = ReactiveView(RequiresContext.from_value(rx.empty()))
 
             def __init__(self):
                 self.age = age_subject
@@ -161,7 +107,7 @@ class ReactiveViewTest(unittest.TestCase):
 
     def test_access_after_dispose(self):
         class Fixture:
-            value = ReactiveView(Some(rx.of(1)))
+            value = ReactiveView(RequiresContext.from_value(rx.of(1)))
 
         fixture = Fixture()
 
