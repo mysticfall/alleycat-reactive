@@ -2,6 +2,7 @@ from types import FrameType
 from typing import TypeVar, Optional, Deque, Callable, Any, Sequence
 
 import rx
+from mypy_extensions import VarArg
 from returns.context import RequiresContext
 from returns.maybe import Maybe
 from rx import Observable
@@ -54,12 +55,21 @@ def combine(*values: ReactiveValue) -> Callable[[Callable[[Sequence[Observable]]
 
 
 def combine_latest(*values: ReactiveValue) -> Callable[[Callable[[Observable], Observable]], ReactiveView]:
+    return _combine_with(values, rx.combine_latest)
+
+
+def zip_values(*values: ReactiveValue) -> Callable[[Callable[[Observable], Observable]], ReactiveView]:
+    return _combine_with(values, rx.zip)
+
+
+def _combine_with(values: Sequence[ReactiveValue], combinator: Callable[[VarArg(Observable)], Observable]) -> \
+        Callable[[Callable[[Observable], Observable]], ReactiveView]:
     if values is None:
         raise ValueError("Argument 'values' is required.")
 
     def process(modifier: Callable[[Observable], Observable]):
         init_value = RequiresContext.from_iterable([v.context for v in values]).map(
-            lambda v: rx.combine_latest(*v)).map(modifier)
+            lambda v: combinator(*v)).map(modifier)
 
         return ReactiveView(init_value)
 

@@ -6,7 +6,7 @@ from rx import operators as ops
 from rx.subject import BehaviorSubject
 
 from alleycat.reactive import ReactiveObject, from_value, observe, from_property, from_observable, combine, \
-    combine_latest, map_value
+    combine_latest, map_value, zip_values
 
 
 # noinspection DuplicatedCode
@@ -115,31 +115,43 @@ class FunctionsTest(unittest.TestCase):
 
         self.assertEqual("Mary has sung 4 song(s).", info)
 
-    def test_map_combine_latest(self):
-        counter = BehaviorSubject(1)
-
+    def test_map_combinators(self):
         class Fixture:
-            value = from_observable(counter)
+            value = from_value(1)
 
             doubled = map_value(value)(ops.map(lambda v: v * 2))
 
             numbers = combine(value, doubled)(lambda o: rx.combine_latest(*o))
 
-            result = combine_latest(value, doubled)(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))
+            combined = combine_latest(value, doubled)(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))
+
+            zipped = zip_values(value, doubled)(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))
+
+        combined = []
+        zipped = []
 
         fixture = Fixture()
+
+        observe(fixture.zipped).subscribe(zipped.append)
+        observe(fixture.combined).subscribe(combined.append)
 
         self.assertEqual(1, fixture.value)
         self.assertEqual(2, fixture.doubled)
         self.assertEqual((1, 2), fixture.numbers)
-        self.assertEqual("1 * 2 = 2", fixture.result)
+        self.assertEqual("1 * 2 = 2", fixture.combined)
+        self.assertEqual("1 * 2 = 2", fixture.zipped)
+        self.assertEqual(["1 * 2 = 2"], combined)
+        self.assertEqual(["1 * 2 = 2"], zipped)
 
-        counter.on_next(3)
+        fixture.value = 3
 
         self.assertEqual(3, fixture.value)
         self.assertEqual(6, fixture.doubled)
         self.assertEqual((3, 6), fixture.numbers)
-        self.assertEqual("3 * 2 = 6", fixture.result)
+        self.assertEqual("3 * 2 = 6", fixture.combined)
+        self.assertEqual("3 * 2 = 6", fixture.zipped)
+        self.assertEqual(["1 * 2 = 2", "3 * 2 = 2", "3 * 2 = 6"], combined)
+        self.assertEqual(["1 * 2 = 2", "3 * 2 = 6"], zipped)
 
     def test_from_property(self):
         class Wolf(ReactiveObject):
