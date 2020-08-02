@@ -2,12 +2,11 @@ import unittest
 from typing import Optional
 
 import rx
-from returns.context import RequiresContext
 from rx import operators as ops
 from rx.subject import BehaviorSubject
 
-from alleycat.reactive import ReactiveObject, from_value, observe, from_property, from_observable, ReactiveView, \
-    combine, combine_latest, map_value
+from alleycat.reactive import ReactiveObject, from_value, observe, from_property, from_observable, combine, \
+    combine_latest, map_value
 
 
 # noinspection DuplicatedCode
@@ -116,29 +115,6 @@ class FunctionsTest(unittest.TestCase):
 
         self.assertEqual("Mary has sung 4 song(s).", info)
 
-    def test_map_combine(self):
-        counter = BehaviorSubject(1)
-
-        class Fixture:
-            value = ReactiveView(RequiresContext.from_value(counter))
-
-            doubled = ReactiveView(value.context.map(lambda c: c.pipe(ops.map(lambda v: v * 2))))
-
-            result = combine(value, doubled)(
-                lambda o: rx.combine_latest(*o).pipe(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}")))
-
-        fixture = Fixture()
-
-        self.assertEqual(1, fixture.value)
-        self.assertEqual(2, fixture.doubled)
-        self.assertEqual("1 * 2 = 2", fixture.result)
-
-        counter.on_next(3)
-
-        self.assertEqual(3, fixture.value)
-        self.assertEqual(6, fixture.doubled)
-        self.assertEqual("3 * 2 = 6", fixture.result)
-
     def test_map_combine_latest(self):
         counter = BehaviorSubject(1)
 
@@ -147,18 +123,22 @@ class FunctionsTest(unittest.TestCase):
 
             doubled = map_value(value)(ops.map(lambda v: v * 2))
 
+            numbers = combine(value, doubled)(lambda o: rx.combine_latest(*o))
+
             result = combine_latest(value, doubled)(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))
 
         fixture = Fixture()
 
         self.assertEqual(1, fixture.value)
         self.assertEqual(2, fixture.doubled)
+        self.assertEqual((1, 2), fixture.numbers)
         self.assertEqual("1 * 2 = 2", fixture.result)
 
         counter.on_next(3)
 
         self.assertEqual(3, fixture.value)
         self.assertEqual(6, fixture.doubled)
+        self.assertEqual((3, 6), fixture.numbers)
         self.assertEqual("3 * 2 = 6", fixture.result)
 
     def test_from_property(self):
