@@ -18,15 +18,9 @@ class ReactiveObjectTest(unittest.TestCase):
         values = []
         doubles = []
 
-        def value_changed(value):
-            values.append(value)
-
-        def doubled_value_changed(value):
-            doubles.append(value)
-
         # Both of the styles should work in the same way:
-        self.fixture.observe("value").subscribe(value_changed)
-        observe(self.fixture.double).subscribe(doubled_value_changed)
+        self.fixture.observe("value").subscribe(values.append)
+        observe(self.fixture.double).subscribe(doubles.append)
 
         for i in range(1, 5):
             self.fixture.value = i

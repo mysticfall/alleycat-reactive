@@ -78,14 +78,11 @@ class FunctionsTest(unittest.TestCase):
         songs = []
         info: Optional[str] = None
 
-        def song_changed(value):
-            songs.append(value)
-
         def info_changed(value):
             nonlocal info
             info = value
 
-        song_subs = observe(poppins.song).subscribe(song_changed)
+        song_subs = observe(poppins.song).subscribe(songs.append)
         info_subs = observe(poppins.info).subscribe(info_changed)
 
         poppins.song = "Feed the Birds"
@@ -102,7 +99,7 @@ class FunctionsTest(unittest.TestCase):
         self.assertEqual("Mary has sung 2 song(s).", info)
 
         # This time, subscribe using the name.
-        observe(poppins, "song").subscribe(song_changed)
+        observe(poppins, "song").subscribe(songs.append)
         observe(poppins, "info").subscribe(info_changed)
 
         poppins.song = "Chim Chim Cheree"

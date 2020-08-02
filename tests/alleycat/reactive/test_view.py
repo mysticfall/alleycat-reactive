@@ -1,5 +1,5 @@
 import unittest
-from typing import List, Callable, Any
+from typing import Callable, Any
 
 import rx
 from returns.context import RequiresContext
@@ -71,13 +71,9 @@ class ReactiveViewTest(unittest.TestCase):
 
         self.assertIsNotNone(obs)
 
-        last_changed: List[str] = []
+        last_changed = []
 
-        def value_changed(value):
-            nonlocal last_changed
-            last_changed.append(value)
-
-        obs.subscribe(value_changed)
+        obs.subscribe(last_changed.append)
 
         # By now, you should be able to hum the rest of the song, if you are cultured :P
         subject.on_next("ABC")
