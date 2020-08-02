@@ -3,6 +3,7 @@ from typing import List, Callable, Any
 
 import rx
 from returns.context import RequiresContext
+from rx import operators as ops
 from rx.subject import BehaviorSubject
 
 from alleycat.reactive import ReactiveView, from_observable
@@ -141,6 +142,31 @@ class ReactiveViewTest(unittest.TestCase):
 
         self.assertEqual(ReactiveView, type(prop))
         self.assertEqual("value", prop.name)
+
+    def test_extend(self):
+        counter = BehaviorSubject(1)
+
+        class Fixture:
+            value = ReactiveView(RequiresContext.from_value(counter))
+
+            doubled = ReactiveView(value.context.map(lambda c: c.pipe(ops.map(lambda v: v * 2))))
+
+            result = ReactiveView(RequiresContext
+                                  .from_iterable([v.context for v in [value, doubled]])
+                                  .map(lambda v: rx.combine_latest(*v))
+                                  .map(lambda o: o.pipe(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))))
+
+        fixture = Fixture()
+
+        self.assertEqual(1, fixture.value)
+        self.assertEqual(2, fixture.doubled)
+        self.assertEqual("1 * 2 = 2", fixture.result)
+
+        counter.on_next(3)
+
+        self.assertEqual(3, fixture.value)
+        self.assertEqual(6, fixture.doubled)
+        self.assertEqual("3 * 2 = 6", fixture.result)
 
 
 if __name__ == '__main__':

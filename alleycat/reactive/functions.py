@@ -1,5 +1,5 @@
 from types import FrameType
-from typing import TypeVar, Optional, Deque, Callable, Any
+from typing import TypeVar, Optional, Deque, Callable, Any, Sequence
 
 import rx
 from returns.context import RequiresContext
@@ -25,12 +25,53 @@ def from_observable(value: Optional[Observable] = None, read_only=False) -> Reac
     return ReactiveView(init_value, read_only)
 
 
+def map_value(value: ReactiveValue[T]) -> Callable[[Callable[[Observable], Observable]], ReactiveView]:
+    if value is None:
+        raise ValueError("Argument 'value' is required.")
+
+    def process(modifier: Callable[[Observable], Observable]):
+        if modifier is None:
+            raise ValueError("Argument 'modifier' is required.")
+
+        return ReactiveView(value.context.map(modifier))
+
+    return process
+
+
+def combine(*values: ReactiveValue) -> Callable[[Callable[[Sequence[Observable]], Observable]], ReactiveView]:
+    if len(values) == 0:
+        raise ValueError("At least one argument is required.")
+
+    def process(modifier: Callable[[Sequence[Observable]], Observable]):
+        if modifier is None:
+            raise ValueError("Argument 'modifier' is required.")
+
+        init_value = RequiresContext.from_iterable([v.context for v in values]).map(modifier)
+
+        return ReactiveView(init_value)
+
+    return process
+
+
+def combine_latest(*values: ReactiveValue) -> Callable[[Callable[[Observable], Observable]], ReactiveView]:
+    if values is None:
+        raise ValueError("Argument 'values' is required.")
+
+    def process(modifier: Callable[[Observable], Observable]):
+        init_value = RequiresContext.from_iterable([v.context for v in values]).map(
+            lambda v: rx.combine_latest(*v)).map(modifier)
+
+        return ReactiveView(init_value)
+
+    return process
+
+
 def from_property(
         parent: ReactiveProperty[T],
         pre_modifier: Optional[PreModifier] = None,
         post_modifier: Optional[PostModifier] = None) -> ReactiveProperty[T]:
     if parent is None:
-        raise ValueError("Argument parent is required.")
+        raise ValueError("Argument 'parent' is required.")
     elif parent.read_only and pre_modifier is not None:
         raise ValueError("Pre-modifier is not applicable to a read-only property.")
 

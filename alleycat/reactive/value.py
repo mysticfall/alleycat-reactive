@@ -17,7 +17,9 @@ U = TypeVar("U")
 class ReactiveValue(Generic[T], ABC):
     KEY = "_rx_value"
 
-    context: RequiresContext[Any, "ReactiveValue.Data[T]"]
+    context: RequiresContext[Any, Observable]
+
+    value_context: RequiresContext[Any, T]
 
     __slots__ = ()
 
@@ -25,11 +27,9 @@ class ReactiveValue(Generic[T], ABC):
         self._name: Optional[str] = None
         self.read_only = read_only
 
-        self.context = RequiresContext(lambda obj: self._get_data(obj))
-
-        # Optimization to prevent an object allocation with every value/observable reference.
-        self._observable_context = self.context.map(lambda data: data.observable)
-        self._value_context = self.context.map(lambda data: data.value)
+        # Declare separately to prevent an object allocation with every value/observable reference.
+        self.context = RequiresContext(lambda obj: self._get_data(obj).observable)
+        self.value_context = RequiresContext(lambda obj: self._get_data(obj).value)
 
     @property
     def name(self) -> Optional[str]:
@@ -39,7 +39,7 @@ class ReactiveValue(Generic[T], ABC):
         if obj is None:
             raise ValueError("Cannot observe a None object.")
 
-        return self._observable_context(obj)
+        return self.context(obj)
 
     def __set_name__(self, obj, name):
         self._name = name
@@ -48,7 +48,7 @@ class ReactiveValue(Generic[T], ABC):
         if obj is None:
             return self
 
-        return self._value_context(obj)
+        return self.value_context(obj)
 
     def __set__(self, obj: Any, value: Any) -> None:
         if obj is None:
