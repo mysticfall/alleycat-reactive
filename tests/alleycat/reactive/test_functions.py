@@ -120,7 +120,7 @@ class FunctionsTest(unittest.TestCase):
 
             numbers = combine(value, doubled)(lambda o: rx.combine_latest(*o))
 
-            combined = combine_latest(value, doubled)(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))
+            combined = combine_latest(value, doubled)(ops.map(lambda v: f"value = {v[0]}, doubled = {v[1]}"))
 
             zipped = zip_values(value, doubled)(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))
 
@@ -135,9 +135,9 @@ class FunctionsTest(unittest.TestCase):
         self.assertEqual(1, fixture.value)
         self.assertEqual(2, fixture.doubled)
         self.assertEqual((1, 2), fixture.numbers)
-        self.assertEqual("1 * 2 = 2", fixture.combined)
+        self.assertEqual("value = 1, doubled = 2", fixture.combined)
         self.assertEqual("1 * 2 = 2", fixture.zipped)
-        self.assertEqual(["1 * 2 = 2"], combined)
+        self.assertEqual(["value = 1, doubled = 2"], combined)
         self.assertEqual(["1 * 2 = 2"], zipped)
 
         fixture.value = 3
@@ -145,9 +145,9 @@ class FunctionsTest(unittest.TestCase):
         self.assertEqual(3, fixture.value)
         self.assertEqual(6, fixture.doubled)
         self.assertEqual((3, 6), fixture.numbers)
-        self.assertEqual("3 * 2 = 6", fixture.combined)
+        self.assertEqual("value = 3, doubled = 6", fixture.combined)
         self.assertEqual("3 * 2 = 6", fixture.zipped)
-        self.assertEqual(["1 * 2 = 2", "3 * 2 = 2", "3 * 2 = 6"], combined)
+        self.assertEqual(["value = 1, doubled = 2", "value = 3, doubled = 2", "value = 3, doubled = 6"], combined)
         self.assertEqual(["1 * 2 = 2", "3 * 2 = 6"], zipped)
 
     def test_from_property(self):
