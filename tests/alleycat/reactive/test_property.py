@@ -5,7 +5,7 @@ from typing import TypeVar, Callable, Any
 from returns.maybe import Some
 from rx import operators as ops
 
-from alleycat.reactive import ReactiveProperty, from_value
+from alleycat.reactive import ReactiveProperty, functions as rv
 
 T = TypeVar("T")
 
@@ -170,7 +170,7 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_class_attribute(self):
         class Fixture:
-            value = from_value(True)
+            value = rv.from_value(True)
 
         prop = Fixture.value
 

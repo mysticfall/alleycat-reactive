@@ -5,17 +5,16 @@ import rx
 from rx import operators as ops
 from rx.subject import BehaviorSubject
 
-from alleycat.reactive import ReactiveObject, from_value, observe, from_property, from_observable, combine, \
-    combine_latest, map_value, zip_values
+from alleycat.reactive import ReactiveObject, functions as rv
 
 
 # noinspection DuplicatedCode
 class FunctionsTest(unittest.TestCase):
     def test_from_value(self):
         class Fixture(ReactiveObject):
-            mary = from_value(100, read_only=True)
+            mary = rv.from_value(100, read_only=True)
 
-            poppins = from_value("Supercalifragilisticexpialidocious")
+            poppins = rv.from_value("Supercalifragilisticexpialidocious")
 
         fixture = Fixture()
 
@@ -36,9 +35,9 @@ class FunctionsTest(unittest.TestCase):
         songs = BehaviorSubject("Supercalifragilisticexpialidocious")
 
         class Fixture(ReactiveObject):
-            mary = from_observable(rx.of(100), read_only=True)
+            mary = rv.from_observable(rx.of(100), read_only=True)
 
-            poppins = from_observable()
+            poppins = rv.new_view()
 
             def __init__(self):
                 self.poppins = songs
@@ -60,14 +59,14 @@ class FunctionsTest(unittest.TestCase):
 
     def test_observe(self):
         class MaryPoppins(ReactiveObject):
-            song = from_value("Supercalifragilisticexpialidocious")
+            song = rv.from_value("Supercalifragilisticexpialidocious")
 
-            info = from_observable()
+            info = rv.new_view()
 
             def __init__(self):
                 # TODO: This is not really a good usage example. We should look into more practical
                 #  use cases and establish best practices once we are done implementing the core features.
-                self.info = observe(self.song).pipe(
+                self.info = rv.observe(self.song).pipe(
                     ops.scan(lambda total, _: total + 1, 0),
                     ops.map(lambda count: f"Mary has sung {count} song(s)."),
                     ops.publish(),
@@ -82,8 +81,8 @@ class FunctionsTest(unittest.TestCase):
             nonlocal info
             info = value
 
-        song_subs = observe(poppins.song).subscribe(songs.append)
-        info_subs = observe(poppins.info).subscribe(info_changed)
+        song_subs = rv.observe(poppins.song).subscribe(songs.append)
+        info_subs = rv.observe(poppins.info).subscribe(info_changed)
 
         poppins.song = "Feed the Birds"
 
@@ -99,8 +98,8 @@ class FunctionsTest(unittest.TestCase):
         self.assertEqual("Mary has sung 2 song(s).", info)
 
         # This time, subscribe using the name.
-        observe(poppins, "song").subscribe(songs.append)
-        observe(poppins, "info").subscribe(info_changed)
+        rv.observe(poppins, "song").subscribe(songs.append)
+        rv.observe(poppins, "info").subscribe(info_changed)
 
         poppins.song = "Chim Chim Cheree"
 
@@ -114,23 +113,23 @@ class FunctionsTest(unittest.TestCase):
 
     def test_map_combinators(self):
         class Fixture:
-            value = from_value(1)
+            value = rv.from_value(1)
 
-            doubled = map_value(value)(ops.map(lambda v: v * 2))
+            doubled = rv.map(value)(ops.map(lambda v: v * 2))
 
-            numbers = combine(value, doubled)(lambda o: rx.combine_latest(*o))
+            numbers = rv.combine(value, doubled)(lambda o: rx.combine_latest(*o))
 
-            combined = combine_latest(value, doubled)(ops.map(lambda v: f"value = {v[0]}, doubled = {v[1]}"))
+            combined = rv.combine_latest(value, doubled)(ops.map(lambda v: f"value = {v[0]}, doubled = {v[1]}"))
 
-            zipped = zip_values(value, doubled)(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))
+            zipped = rv.zip(value, doubled)(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))
 
         combined = []
         zipped = []
 
         fixture = Fixture()
 
-        observe(fixture.zipped).subscribe(zipped.append)
-        observe(fixture.combined).subscribe(combined.append)
+        rv.observe(fixture.zipped).subscribe(zipped.append)
+        rv.observe(fixture.combined).subscribe(combined.append)
 
         self.assertEqual(1, fixture.value)
         self.assertEqual(2, fixture.doubled)
@@ -152,10 +151,10 @@ class FunctionsTest(unittest.TestCase):
 
     def test_from_property(self):
         class Wolf(ReactiveObject):
-            name = from_value("wolf")
+            name = rv.from_value("wolf")
 
         class SuperWolf(Wolf):
-            name = from_property(
+            name = rv.from_property(
                 Wolf.name,
                 lambda obj, v: f"a big bad {v}",
                 lambda obj, v: v.pipe(ops.map(lambda n: f"Who's afraid of {n}?")))
@@ -167,7 +166,7 @@ class FunctionsTest(unittest.TestCase):
             text = value
 
         with SuperWolf() as wolf:
-            observe(wolf.name).subscribe(value_changed)
+            rv.observe(wolf.name).subscribe(value_changed)
 
             self.assertEqual("Who's afraid of a big bad wolf?", text)
 

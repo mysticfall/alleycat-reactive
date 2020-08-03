@@ -3,7 +3,7 @@ from typing import Any, Callable
 
 from rx import operators as ops
 
-from alleycat.reactive import ReactiveObject, observe, from_value, from_observable
+from alleycat.reactive import ReactiveObject, functions as rv
 
 
 class ReactiveObjectTest(unittest.TestCase):
@@ -20,7 +20,7 @@ class ReactiveObjectTest(unittest.TestCase):
 
         # Both of the styles should work in the same way:
         self.fixture.observe("value").subscribe(values.append)
-        observe(self.fixture.double).subscribe(doubles.append)
+        rv.observe(self.fixture.double).subscribe(doubles.append)
 
         for i in range(1, 5):
             self.fixture.value = i
@@ -42,7 +42,7 @@ class ReactiveObjectTest(unittest.TestCase):
             nonlocal disposed
             disposed = value
 
-        observe(self.fixture.disposed).subscribe(value_changed)
+        rv.observe(self.fixture.disposed).subscribe(value_changed)
 
         self.fixture.dispose()
 
@@ -56,8 +56,8 @@ class ReactiveObjectTest(unittest.TestCase):
 
             completed[key] = True
 
-        observe(self.fixture.value).subscribe(on_completed=on_complete("value"))
-        observe(self.fixture, "double").subscribe(on_completed=on_complete("double"))
+        rv.observe(self.fixture.value).subscribe(on_completed=on_complete("value"))
+        rv.observe(self.fixture, "double").subscribe(on_completed=on_complete("double"))
 
         self.fixture.dispose()
 
@@ -88,12 +88,12 @@ class ReactiveObjectTest(unittest.TestCase):
 
 
 class Fixture(ReactiveObject):
-    value = from_value(0)
+    value = rv.from_value(0)
 
-    double = from_observable()
+    double = rv.new_view()
 
     def __init__(self):
-        self.double = observe(self.value).pipe(ops.map(lambda v: v * 2))
+        self.double = rv.observe(self.value).pipe(ops.map(lambda v: v * 2))
 
 
 if __name__ == '__main__':

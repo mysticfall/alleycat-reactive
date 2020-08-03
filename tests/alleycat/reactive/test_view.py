@@ -6,7 +6,7 @@ from returns.context import RequiresContext
 from rx import operators as ops
 from rx.subject import BehaviorSubject
 
-from alleycat.reactive import ReactiveView, from_observable
+from alleycat.reactive import ReactiveView, functions as rv
 
 
 # noinspection DuplicatedCode
@@ -132,7 +132,7 @@ class ReactiveViewTest(unittest.TestCase):
 
     def test_class_attribute(self):
         class Fixture:
-            value = from_observable(rx.empty())
+            value = rv.from_observable(rx.empty())
 
         prop = Fixture.value
 

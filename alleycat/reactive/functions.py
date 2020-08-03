@@ -4,7 +4,7 @@ from typing import TypeVar, Optional, Deque, Callable, Any, Sequence
 import rx
 from mypy_extensions import VarArg
 from returns.context import RequiresContext
-from returns.maybe import Maybe
+from returns.maybe import Maybe, Nothing
 from rx import Observable
 
 from . import PreModifier, PostModifier, ReactiveValue
@@ -15,7 +15,15 @@ from .view import ReactiveView
 T = TypeVar("T")
 
 
-def from_value(value: Optional[T] = None, read_only=False) -> ReactiveProperty[T]:
+def new_property(read_only=False) -> ReactiveProperty:
+    return ReactiveProperty(Nothing, read_only)
+
+
+def new_view(read_only=False) -> ReactiveView:
+    return ReactiveView(RequiresContext(lambda _: rx.empty()), read_only)
+
+
+def from_value(value: Optional[T], read_only=False) -> ReactiveProperty[T]:
     return ReactiveProperty(Maybe.from_value(value), read_only)
 
 
@@ -26,7 +34,8 @@ def from_observable(value: Optional[Observable] = None, read_only=False) -> Reac
     return ReactiveView(init_value, read_only)
 
 
-def map_value(value: ReactiveValue[T]) -> Callable[[Callable[[Observable], Observable]], ReactiveView]:
+# noinspection PyShadowingBuiltins
+def map(value: ReactiveValue[T]) -> Callable[[Callable[[Observable], Observable]], ReactiveView]:
     if value is None:
         raise ValueError("Argument 'value' is required.")
 
@@ -58,7 +67,8 @@ def combine_latest(*values: ReactiveValue) -> Callable[[Callable[[Observable], O
     return _combine_with(values, rx.combine_latest)
 
 
-def zip_values(*values: ReactiveValue) -> Callable[[Callable[[Observable], Observable]], ReactiveView]:
+# noinspection PyShadowingBuiltins
+def zip(*values: ReactiveValue) -> Callable[[Callable[[Observable], Observable]], ReactiveView]:
     return _combine_with(values, rx.zip)
 
 
