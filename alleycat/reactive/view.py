@@ -10,7 +10,7 @@ T = TypeVar("T")
 
 class ReactiveView(Generic[T], ReactiveValue[T]):
 
-    def __init__(self, init_value: RequiresContext[Observable, Any], read_only=False) -> None:
+    def __init__(self, init_value: RequiresContext[Observable, Any], read_only=True) -> None:
         super().__init__(read_only=read_only)
 
         self.init_value = init_value

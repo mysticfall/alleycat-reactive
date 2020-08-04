@@ -43,7 +43,7 @@ class ReactiveViewTest(unittest.TestCase):
 
     def test_write_value(self):
         class Fixture:
-            value = ReactiveView(RequiresContext.from_value(rx.of(1)))
+            value = ReactiveView(RequiresContext.from_value(rx.of(1)), read_only=False)
 
         fixture = Fixture()
         fixture.value = rx.of(2, 3)
@@ -104,7 +104,7 @@ class ReactiveViewTest(unittest.TestCase):
 
     def test_access_after_dispose(self):
         class Fixture:
-            value = ReactiveView(RequiresContext.from_value(rx.of(1)))
+            value = ReactiveView(RequiresContext.from_value(rx.of(1)), read_only=False)
 
         fixture = Fixture()
 
