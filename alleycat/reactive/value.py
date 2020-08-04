@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import TypeVar, Generic, Callable, Optional, Union, Any
@@ -44,7 +46,7 @@ class ReactiveValue(Generic[T], ABC):
     def __set_name__(self, obj, name):
         self._name = name
 
-    def __get__(self, obj: Any, obj_type: Optional[type] = None) -> Union[T, "ReactiveValue[T]"]:
+    def __get__(self, obj: Any, obj_type: Optional[type] = None) -> Union[T, ReactiveValue[T]]:
         if obj is None:
             return self
 
