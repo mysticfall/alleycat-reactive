@@ -4,7 +4,7 @@ from typing import TypeVar, Callable, Any
 from returns.maybe import Some
 from rx import operators as ops
 
-from alleycat.reactive import ReactiveProperty, functions as rv
+from alleycat.reactive import ReactiveProperty, functions as rv, ReactiveView
 
 T = TypeVar("T")
 
@@ -206,6 +206,28 @@ class ReactivePropertyTest(unittest.TestCase):
         fixture.name = "dog"
 
         self.assertEqual("Who's afraid of a big bad cat?", fixture.song)
+
+    def test_as_view(self):
+        class Fixture:
+            name = ReactiveProperty(Some("Virginia O'Brien"))
+
+            star = name.as_view()
+
+        self.assertEqual(ReactiveView, type(Fixture.star))
+
+        fixture = Fixture()
+
+        stars = []
+
+        rv.observe(fixture.star).subscribe(stars.append)
+
+        self.assertEqual("Virginia O'Brien", fixture.star)
+        self.assertEqual(["Virginia O'Brien"], stars)
+
+        fixture.name = "Judy Garland"
+
+        self.assertEqual("Judy Garland", fixture.star)
+        self.assertEqual(["Virginia O'Brien", "Judy Garland"], stars)
 
 
 if __name__ == '__main__':

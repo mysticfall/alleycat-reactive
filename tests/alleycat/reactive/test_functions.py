@@ -115,7 +115,7 @@ class FunctionsTest(unittest.TestCase):
         class Fixture:
             value = rv.from_value(1)
 
-            doubled = rv.map(value)(ops.map(lambda v: v * 2))
+            doubled = value.as_view().map(lambda v: v * 2)
 
             numbers = rv.combine(value, doubled)(lambda o: rx.combine_latest(*o))
 

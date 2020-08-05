@@ -27,6 +27,9 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
         self.init_value = init_value
         self.post_modifier = post_modifier
 
+    def as_view(self) -> ReactiveView[T]:
+        return ReactiveView(self.context, self.read_only, self)
+
     def bind(self, modifier: Callable[[Observable], Observable]) -> ReactiveProperty:
         if modifier is None:
             raise ValueError("Argument 'modifier' is required.")
