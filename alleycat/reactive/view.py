@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TypeVar, Generic, Any, Callable
+from typing import TypeVar, Generic, Any, Callable, Optional
 
 from returns.context import RequiresContext
 from rx import Observable
@@ -12,8 +12,11 @@ T = TypeVar("T")
 
 class ReactiveView(Generic[T], ReactiveValue[T]):
 
-    def __init__(self, init_value: RequiresContext[Observable, Any], read_only=True) -> None:
-        super().__init__(read_only=read_only)
+    def __init__(self,
+                 init_value: RequiresContext[Observable, Any],
+                 read_only=True,
+                 parent: Optional[ReactiveValue] = None) -> None:
+        super().__init__(read_only, parent)
 
         self.init_value = init_value
 
@@ -21,7 +24,7 @@ class ReactiveView(Generic[T], ReactiveValue[T]):
         if modifier is None:
             raise ValueError("Argument 'modifier' is required.")
 
-        return ReactiveView(self.context.map(modifier), self.read_only)
+        return ReactiveView(self.context.map(modifier), self.read_only, self)
 
     def _create_data(self, obj: Any) -> ReactiveValue.Data:
         assert self.name is not None

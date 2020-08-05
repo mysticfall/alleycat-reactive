@@ -8,7 +8,7 @@ from returns.maybe import Maybe, Nothing
 from rx import Observable
 from rx.subject import BehaviorSubject
 
-from . import ReactiveValue
+from . import ReactiveValue, ReactiveView
 
 T = TypeVar("T")
 
@@ -19,9 +19,10 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             self,
             init_value: Maybe[T] = Nothing,
             read_only=False,
+            parent: Optional[ReactiveValue] = None,
             post_modifier: Callable[[Observable], Observable] = identity) -> None:
 
-        super().__init__(read_only=read_only)
+        super().__init__(read_only, parent)
 
         self.init_value = init_value
         self.post_modifier = post_modifier
@@ -29,7 +30,7 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
     def bind(self, modifier: Callable[[Observable], Observable]) -> ReactiveProperty:
         if modifier is None:
             raise ValueError("Argument 'modifier' is required.")
-        return ReactiveProperty(self.init_value, self.read_only, compose(self.post_modifier, modifier))
+        return ReactiveProperty(self.init_value, self.read_only, self, compose(self.post_modifier, modifier))
 
     class PropertyData(ReactiveValue.Data[T]):
 

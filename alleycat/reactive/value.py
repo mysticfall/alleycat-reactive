@@ -6,6 +6,7 @@ from typing import TypeVar, Generic, Callable, Optional, Union, Any
 
 from returns.context import RequiresContext
 from returns.functions import raise_exception, identity
+from returns.maybe import Maybe
 from returns.result import safe, Success
 from rx import Observable
 from rx import operators as ops
@@ -25,9 +26,10 @@ class ReactiveValue(Generic[T], ABC):
 
     __slots__ = ()
 
-    def __init__(self, read_only=False) -> None:
+    def __init__(self, read_only=False, parent: Optional[ReactiveValue] = None) -> None:
         self._name: Optional[str] = None
         self.read_only = read_only
+        self.parent = Maybe.from_value(parent)
 
         data: RequiresContext[Any, ReactiveValue.Data[T]] = RequiresContext(lambda obj: self._get_data(obj))
 
@@ -37,7 +39,7 @@ class ReactiveValue(Generic[T], ABC):
 
     @property
     def name(self) -> Optional[str]:
-        return self._name
+        return self._name if self._name is not None else self.parent.map(lambda p: p.name).value_or(None)
 
     def observable(self, obj: Any) -> Observable:
         if obj is None:
@@ -144,7 +146,7 @@ class ReactiveValue(Generic[T], ABC):
     def _get_data(self, obj: Any) -> Data[T]:
         assert obj is not None
 
-        if self._name is None:
+        if self.name is None:
             raise AttributeError("The class must be instantiated as a property of a class.")
 
         def initialize(container: Any, key: str, default: Callable[[], Any], _: Exception):
