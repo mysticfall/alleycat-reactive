@@ -15,6 +15,7 @@ class ReactivePropertyTest(unittest.TestCase):
     def test_initialization(self):
         self.assertEqual(Some(3), ReactiveProperty(Some(3)).init_value)
         self.assertEqual(Some("test"), ReactiveProperty(Some("test")).init_value)
+        self.assertEqual(False, ReactiveProperty().read_only)
         self.assertEqual(True, ReactiveProperty(read_only=True).read_only)
         self.assertEqual(False, ReactiveProperty(read_only=False).read_only)
 
