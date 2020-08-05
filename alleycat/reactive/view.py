@@ -27,6 +27,7 @@ class ReactiveView(Generic[T], ReactiveValue[T]):
         return ReactiveView(self.context.map(modifier), self.read_only, self)
 
     def _create_data(self, obj: Any) -> ReactiveValue.Data:
+        assert obj is not None
         assert self.name is not None
 
         return self.Data(self.name, self.init_value(obj))

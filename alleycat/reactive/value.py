@@ -39,7 +39,10 @@ class ReactiveValue(Generic[T], ABC):
 
     @property
     def name(self) -> Optional[str]:
-        return self._name if self._name is not None else self.parent.map(lambda p: p.name).value_or(None)
+        # Try persuading Mypy to see reason here... I gave up *shrug*.
+        # On a side note, we don't use Some() here to avoid object instantiation per every value reference (_get_data).
+        return self._name if self._name is not None else \
+            self.parent.map(lambda p: p.name).value_or(None)  # type: ignore
 
     def observable(self, obj: Any) -> Observable:
         if obj is None:
