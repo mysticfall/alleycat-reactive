@@ -5,7 +5,7 @@ from functools import partial
 from typing import TypeVar, Generic, Callable, Optional, Union, Any
 
 from returns.context import RequiresContext
-from returns.functions import raise_exception
+from returns.functions import raise_exception, identity
 from returns.result import safe, Success
 from rx import Observable
 from rx import operators as ops
@@ -29,9 +29,11 @@ class ReactiveValue(Generic[T], ABC):
         self._name: Optional[str] = None
         self.read_only = read_only
 
+        data: RequiresContext[Any, ReactiveValue.Data[T]] = RequiresContext(lambda obj: self._get_data(obj))
+
         # Declare separately to prevent an object allocation with every value/observable reference.
-        self.context = RequiresContext(lambda obj: self._get_data(obj).observable)
-        self.value_context = RequiresContext(lambda obj: self._get_data(obj).value)
+        self.context = data.map(lambda c: c.observable)
+        self.value_context = data.map(lambda c: c.value)
 
     @property
     def name(self) -> Optional[str]:
@@ -42,6 +44,13 @@ class ReactiveValue(Generic[T], ABC):
             raise ValueError("Cannot observe a None object.")
 
         return self.context(obj)
+
+    def map(self, modifier: Callable[[T], Any]) -> ReactiveValue:
+        return self.bind(lambda o: o.pipe(ops.map(modifier)))
+
+    @abstractmethod
+    def bind(self, modifier: Callable[[Observable], Observable]) -> ReactiveValue:
+        pass
 
     def __set_name__(self, obj, name):
         self._name = name
@@ -67,7 +76,7 @@ class ReactiveValue(Generic[T], ABC):
 
     class Data(Generic[U], Disposable):
 
-        def __init__(self, name: str, observable: Observable):
+        def __init__(self, name: str, observable: Observable, modifier: Callable[[Observable], Observable] = identity):
             assert str is not None
             assert observable is not None
 
@@ -78,7 +87,7 @@ class ReactiveValue(Generic[T], ABC):
             self._initialized = False
             self._disposed = False
             self._subject = BehaviorSubject(observable)
-            self._observable = self._subject.pipe(ops.switch_latest())
+            self._observable = modifier(self._subject.pipe(ops.switch_latest()))
 
             def update(value):
                 if not self.initialized:
@@ -112,7 +121,7 @@ class ReactiveValue(Generic[T], ABC):
             return self._observable
 
         @observable.setter
-        def observable(self, value: Observable):
+        def observable(self, value: Observable) -> None:
             assert value is not None
 
             self._check_disposed()

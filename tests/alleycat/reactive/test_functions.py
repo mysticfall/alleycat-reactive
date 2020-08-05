@@ -149,31 +149,6 @@ class FunctionsTest(unittest.TestCase):
         self.assertEqual(["value = 1, doubled = 2", "value = 3, doubled = 2", "value = 3, doubled = 6"], combined)
         self.assertEqual(["1 * 2 = 2", "3 * 2 = 6"], zipped)
 
-    def test_from_property(self):
-        class Wolf(ReactiveObject):
-            name = rv.from_value("wolf")
-
-        class SuperWolf(Wolf):
-            name = rv.from_property(
-                Wolf.name,
-                lambda obj, v: f"a big bad {v}",
-                lambda obj, v: v.pipe(ops.map(lambda n: f"Who's afraid of {n}?")))
-
-        text: Optional[str] = None
-
-        def value_changed(value):
-            nonlocal text
-            text = value
-
-        with SuperWolf() as wolf:
-            rv.observe(wolf.name).subscribe(value_changed)
-
-            self.assertEqual("Who's afraid of a big bad wolf?", text)
-
-            wolf.name = "cat"
-
-            self.assertEqual("Who's afraid of a big bad cat?", text)
-
 
 if __name__ == '__main__':
     unittest.main()

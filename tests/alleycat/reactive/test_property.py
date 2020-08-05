@@ -1,5 +1,4 @@
 import unittest
-from collections import deque
 from typing import TypeVar, Callable, Any
 
 from returns.maybe import Some
@@ -18,12 +17,6 @@ class ReactivePropertyTest(unittest.TestCase):
         self.assertEqual(Some("test"), ReactiveProperty(Some("test")).init_value)
         self.assertEqual(True, ReactiveProperty(read_only=True).read_only)
         self.assertEqual(False, ReactiveProperty(read_only=False).read_only)
-
-        pre_modifiers = deque([lambda obj, v: v + obj.increment])
-        post_modifiers = deque([lambda obj, obs: obs.pipe(ops.map(lambda v: v * obj.multiplier))])
-
-        self.assertEqual(pre_modifiers, ReactiveProperty(pre_modifiers=pre_modifiers).pre_modifiers)
-        self.assertEqual(post_modifiers, ReactiveProperty(post_modifiers=post_modifiers).post_modifiers)
 
     def test_name_inference(self):
         class Fixture:
@@ -176,6 +169,42 @@ class ReactivePropertyTest(unittest.TestCase):
 
         self.assertEqual(ReactiveProperty, type(prop))
         self.assertEqual("value", prop.name)
+
+    def test_map(self):
+        class Fixture:
+            name = ReactiveProperty(Some("wolf"))
+
+            song = name.map(lambda n: f"Who's afraid of a big bad {n}?")
+
+        fixture = Fixture()
+
+        self.assertEqual("Who's afraid of a big bad wolf?", fixture.song)
+
+        fixture.song = "cat"
+
+        self.assertEqual("Who's afraid of a big bad cat?", fixture.song)
+
+        fixture.name = "dog"
+
+        self.assertEqual("Who's afraid of a big bad cat?", fixture.song)
+
+    def test_bind(self):
+        class Fixture:
+            name = ReactiveProperty(Some("wolf"))
+
+            song = name.bind(lambda o: o.pipe(ops.map(lambda n: f"Who's afraid of a big bad {n}?")))
+
+        fixture = Fixture()
+
+        self.assertEqual("Who's afraid of a big bad wolf?", fixture.song)
+
+        fixture.song = "cat"
+
+        self.assertEqual("Who's afraid of a big bad cat?", fixture.song)
+
+        fixture.name = "dog"
+
+        self.assertEqual("Who's afraid of a big bad cat?", fixture.song)
 
 
 if __name__ == '__main__':

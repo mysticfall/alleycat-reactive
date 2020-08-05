@@ -1,5 +1,5 @@
 from types import FrameType
-from typing import TypeVar, Optional, Deque, Callable, Any, Sequence
+from typing import TypeVar, Optional, Callable, Any, Sequence
 
 import rx
 from mypy_extensions import VarArg
@@ -7,7 +7,7 @@ from returns.context import RequiresContext
 from returns.maybe import Maybe, Nothing
 from rx import Observable
 
-from . import PreModifier, PostModifier, ReactiveValue
+from . import ReactiveValue
 from . import utils
 from .property import ReactiveProperty
 from .view import ReactiveView
@@ -84,30 +84,6 @@ def _combine_with(values: Sequence[ReactiveValue], combinator: Callable[[VarArg(
         return ReactiveView(init_value)
 
     return process
-
-
-def from_property(
-        parent: ReactiveProperty[T],
-        pre_modifier: Optional[PreModifier] = None,
-        post_modifier: Optional[PostModifier] = None) -> ReactiveProperty[T]:
-    if parent is None:
-        raise ValueError("Argument 'parent' is required.")
-    elif parent.read_only and pre_modifier is not None:
-        raise ValueError("Pre-modifier is not applicable to a read-only property.")
-
-    pre_modifiers: Optional[Deque[PreModifier]] = None
-    post_modifiers: Optional[Deque[PostModifier]] = None
-
-    if pre_modifier is not None:
-        pre_modifiers = parent.pre_modifiers.copy()
-        pre_modifiers.appendleft(pre_modifier)
-
-    if post_modifier is not None:
-        post_modifiers = parent.post_modifiers.copy()
-        post_modifiers.appendleft(post_modifier)
-
-    return ReactiveProperty(
-        parent.init_value, parent.read_only, pre_modifiers=pre_modifiers, post_modifiers=post_modifiers)
 
 
 def observe(obj, name: Optional[str] = None) -> Observable:

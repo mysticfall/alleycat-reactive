@@ -139,6 +139,40 @@ class ReactiveViewTest(unittest.TestCase):
         self.assertEqual(ReactiveView, type(prop))
         self.assertEqual("value", prop.name)
 
+    def test_map(self):
+        source = BehaviorSubject("wolf")
+
+        class Fixture:
+            name = ReactiveView(RequiresContext.from_value(source), read_only=False)
+
+            song = name.map(lambda n: f"Who's afraid of a big bad {n}?")
+
+        fixture = Fixture()
+
+        self.assertEqual(False, Fixture.song.read_only)
+        self.assertEqual("Who's afraid of a big bad wolf?", fixture.song)
+
+        source.on_next("cat")
+
+        self.assertEqual("Who's afraid of a big bad cat?", fixture.song)
+
+    def test_bind(self):
+        source = BehaviorSubject("wolf")
+
+        class Fixture:
+            name = ReactiveView(RequiresContext.from_value(source), read_only=False)
+
+            song = name.bind(lambda o: o.pipe(ops.map(lambda n: f"Who's afraid of a big bad {n}?")))
+
+        fixture = Fixture()
+
+        self.assertEqual(False, Fixture.song.read_only)
+        self.assertEqual("Who's afraid of a big bad wolf?", fixture.song)
+
+        source.on_next("cat")
+
+        self.assertEqual("Who's afraid of a big bad cat?", fixture.song)
+
     def test_extend(self):
         counter = BehaviorSubject(1)
 
