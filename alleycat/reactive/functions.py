@@ -34,20 +34,6 @@ def from_observable(value: Optional[Observable] = None, read_only=False) -> Reac
     return ReactiveView(init_value, read_only)
 
 
-# noinspection PyShadowingBuiltins
-def map(value: ReactiveValue[T]) -> Callable[[Callable[[Observable], Observable]], ReactiveView]:
-    if value is None:
-        raise ValueError("Argument 'value' is required.")
-
-    def process(modifier: Callable[[Observable], Observable]):
-        if modifier is None:
-            raise ValueError("Argument 'modifier' is required.")
-
-        return ReactiveView(value.context.map(modifier))
-
-    return process
-
-
 def combine(*values: ReactiveValue) -> Callable[[Callable[[Sequence[Observable]], Observable]], ReactiveView]:
     if len(values) == 0:
         raise ValueError("At least one argument is required.")
