@@ -20,11 +20,13 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             init_value: Maybe[T] = Nothing,
             read_only=False,
             parent: Optional[ReactiveValue] = None,
+            pre_modifier: Callable[[T], T] = identity,
             post_modifier: Callable[[Observable], Observable] = identity) -> None:
 
         super().__init__(read_only, parent)
 
         self.init_value = init_value
+        self.pre_modifier = pre_modifier
         self.post_modifier = post_modifier
 
     def as_view(self) -> ReactiveView[T]:
@@ -33,20 +35,39 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
     def bind(self, modifier: Callable[[Observable], Observable]) -> ReactiveProperty:
         if modifier is None:
             raise ValueError("Argument 'modifier' is required.")
-        return ReactiveProperty(self.init_value, self.read_only, self, compose(self.post_modifier, modifier))
+
+        return ReactiveProperty(
+            self.init_value, self.read_only, self, self.pre_modifier, compose(self.post_modifier, modifier))
+
+    def premap(self, modifier: Callable[[T], T]) -> ReactiveProperty[T]:
+        if modifier is None:
+            raise ValueError("Argument 'modifier' is required.")
+
+        return ReactiveProperty(
+            self.init_value, self.read_only, self, compose(self.pre_modifier, modifier), self.post_modifier)
 
     class PropertyData(ReactiveValue.Data[T]):
 
-        def __init__(self, name: str, init_value: Maybe[T], post_modifier: Callable[[Observable], Observable]):
+        def __init__(
+                self,
+                name: str,
+                init_value: Maybe[T],
+                pre_modifier: Callable[[T], T],
+                post_modifier: Callable[[Observable], Observable]):
+
             assert name is not None
             assert init_value is not None
+            assert post_modifier is not None
+            assert pre_modifier is not None
+
+            self.modifier = pre_modifier
 
             self._property: Optional[BehaviorSubject] = None
 
             obs: Observable
 
             if init_value != Nothing:
-                self._property = BehaviorSubject(init_value.unwrap())
+                self._property = BehaviorSubject(init_value.map(pre_modifier).unwrap())
 
                 obs = self._property
             else:
@@ -66,9 +87,9 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             if self.initialized:
                 assert self._property is not None
 
-                self._property.on_next(value)
+                self._property.on_next(self.modifier(value))
             else:
-                self._property = BehaviorSubject(value)
+                self._property = BehaviorSubject(self.modifier(value))
 
                 self.observable = self._property
 
@@ -84,7 +105,7 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
         assert obj is not None
         assert self.name is not None
 
-        return self.PropertyData(self.name, self.init_value, self.post_modifier)
+        return self.PropertyData(self.name, self.init_value, self.pre_modifier, self.post_modifier)
 
     def _get_data(self, obj: Any) -> PropertyData:
         assert obj is not None

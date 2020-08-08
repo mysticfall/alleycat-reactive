@@ -207,6 +207,36 @@ class ReactivePropertyTest(unittest.TestCase):
 
         self.assertEqual("Who's afraid of a big bad cat?", fixture.song)
 
+    def test_premap(self):
+        def validate(number: int) -> int:
+            if number < 1:
+                raise AttributeError("Value must be a positive integer.")
+
+            return number
+
+        class Fixture:
+            value = ReactiveProperty(Some(1)).premap(lambda v: v * 2)
+
+            positive_only = value.premap(validate)
+
+        fixture = Fixture()
+
+        self.assertEqual(2, fixture.value)
+        self.assertEqual(2, fixture.positive_only)
+
+        fixture.value = -2
+
+        self.assertEqual(-4, fixture.value)
+
+        with self.assertRaises(AttributeError) as cm:
+            fixture.positive_only = -2
+
+        self.assertEqual("Value must be a positive integer.", cm.exception.args[0])
+
+        fixture.positive_only = 3
+
+        self.assertEqual(6, fixture.positive_only)
+
     def test_as_view(self):
         class Fixture:
             name = ReactiveProperty(Some("Virginia O'Brien"))
