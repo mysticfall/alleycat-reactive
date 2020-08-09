@@ -189,23 +189,23 @@ class ReactivePropertyTest(unittest.TestCase):
 
         self.assertEqual("Who's afraid of a big bad cat?", fixture.song)
 
-    def test_bind(self):
+    def test_pipe(self):
         class Fixture:
             name = ReactiveProperty(Some("wolf"))
 
-            song = name.bind(lambda o: o.pipe(ops.map(lambda n: f"Who's afraid of a big bad {n}?")))
+            song = name.pipe(ops.map(lambda n: f"Who's afraid of a big bad {n}?"), ops.map(str.upper))
 
         fixture = Fixture()
 
-        self.assertEqual("Who's afraid of a big bad wolf?", fixture.song)
+        self.assertEqual("WHO'S AFRAID OF A BIG BAD WOLF?", fixture.song)
 
         fixture.song = "cat"
 
-        self.assertEqual("Who's afraid of a big bad cat?", fixture.song)
+        self.assertEqual("WHO'S AFRAID OF A BIG BAD CAT?", fixture.song)
 
         fixture.name = "dog"
 
-        self.assertEqual("Who's afraid of a big bad cat?", fixture.song)
+        self.assertEqual("WHO'S AFRAID OF A BIG BAD CAT?", fixture.song)
 
     def test_premap(self):
         def validate(number: int) -> int:

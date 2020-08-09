@@ -20,11 +20,8 @@ class ReactiveView(Generic[T], ReactiveValue[T]):
 
         self.init_value = init_value
 
-    def bind(self, modifier: Callable[[Observable], Observable]) -> ReactiveView:
-        if modifier is None:
-            raise ValueError("Argument 'modifier' is required.")
-
-        return ReactiveView(self.context.map(modifier), self.read_only, self)
+    def pipe(self, *modifiers: Callable[[Observable], Observable]) -> ReactiveView:
+        return ReactiveView(self.context.map(lambda o: o.pipe(*modifiers)), self.read_only, self)
 
     def _create_data(self, obj: Any) -> ReactiveValue.Data:
         assert obj is not None

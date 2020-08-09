@@ -157,13 +157,13 @@ class ReactiveViewTest(unittest.TestCase):
 
         self.assertEqual("Who's afraid of a big bad cat?", fixture.song)
 
-    def test_bind(self):
+    def test_pipe(self):
         source = BehaviorSubject("wolf")
 
         class Fixture:
             name = ReactiveView(RequiresContext.from_value(source), read_only=False)
 
-            song = name.bind(lambda o: o.pipe(ops.map(lambda n: f"Who's afraid of a big bad {n}?")))
+            song = name.pipe(ops.map(lambda n: f"Who's afraid of a big bad {n}?"))
 
         fixture = Fixture()
 

@@ -51,10 +51,10 @@ class ReactiveValue(Generic[T], ABC):
         return self.context(obj)
 
     def map(self, modifier: Callable[[T], Any]) -> ReactiveValue:
-        return self.bind(lambda o: o.pipe(ops.map(modifier)))
+        return self.pipe(ops.map(modifier))
 
     @abstractmethod
-    def bind(self, modifier: Callable[[Observable], Observable]) -> ReactiveValue:
+    def pipe(self, *modifiers: Callable[[Observable], Observable]) -> ReactiveValue:
         pass
 
     def __set_name__(self, obj, name):

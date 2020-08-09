@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TypeVar, Generic, Callable, Optional, Any, cast
 
 import rx
+from returns.pipeline import pipe as pipe_
 from returns.functions import identity, compose
 from returns.maybe import Maybe, Nothing
 from rx import Observable
@@ -32,12 +33,11 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
     def as_view(self) -> ReactiveView[T]:
         return ReactiveView(self.context, self.read_only, self)
 
-    def bind(self, modifier: Callable[[Observable], Observable]) -> ReactiveProperty:
-        if modifier is None:
-            raise ValueError("Argument 'modifier' is required.")
+    def pipe(self, *modifiers: Callable[[Observable], Observable]) -> ReactiveProperty:
+        stack = [self.post_modifier] + list(modifiers)
 
         return ReactiveProperty(
-            self.init_value, self.read_only, self, self.pre_modifier, compose(self.post_modifier, modifier))
+            self.init_value, self.read_only, self, self.pre_modifier, pipe_(*stack))  # type:ignore
 
     def premap(self, modifier: Callable[[T], T]) -> ReactiveProperty[T]:
         if modifier is None:
