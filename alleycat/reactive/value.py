@@ -16,10 +16,12 @@ from rx.subject import BehaviorSubject
 T = TypeVar("T")
 U = TypeVar("U")
 
+DATA_KEY = "_rv_data"
+
+META_KEY_PREFIX = "_rv_meta_"
+
 
 class ReactiveValue(Generic[T], ABC):
-    KEY = "_rx_value"
-
     context: RequiresContext[Any, Observable]
 
     value_context: RequiresContext[Any, T]
@@ -57,8 +59,34 @@ class ReactiveValue(Generic[T], ABC):
     def pipe(self, *modifiers: Callable[[Observable], Observable]) -> ReactiveValue:
         pass
 
-    def __set_name__(self, obj, name):
+    @staticmethod
+    def _check_hooks(cls: type, name: str) -> None:
+        key = META_KEY_PREFIX + cls.__qualname__
+
+        if not hasattr(cls, key):
+            setattr(cls, key, {"values": []})
+
+        metadata = getattr(cls, key)
+        values = metadata["values"]
+
+        if name not in values:
+            values.append(name)
+
+        if "init" not in metadata:
+            metadata["init"] = getattr(cls, "__init__")
+
+            def init_hook(instance, *args, **kwargs):
+                metadata["init"](instance, *args, **kwargs)
+
+                for value in metadata["values"]:
+                    getattr(cls, value).context(instance)
+
+            setattr(cls, "__init__", init_hook)
+
+    def __set_name__(self, cls, name):
         self._name = name
+
+        ReactiveValue._check_hooks(cls, name)
 
     def __get__(self, obj: Any, obj_type: Optional[type] = None) -> Union[T, ReactiveValue[T]]:
         if obj is None:
@@ -162,13 +190,13 @@ class ReactiveValue(Generic[T], ABC):
 
             return Success(value)
 
-        init_container = partial(initialize, obj, self.KEY, lambda: {})
+        init_container = partial(initialize, obj, DATA_KEY, lambda: {})
         new_instance = partial(self._create_data, obj)
 
         def init_data(v: Any):
             return partial(initialize, v, self.name, new_instance)
 
-        return safe(getattr)(obj, self.KEY) \
+        return safe(getattr)(obj, DATA_KEY) \
             .rescue(init_container) \
             .bind(lambda v: safe(lambda: v[self.name])().rescue(init_data(v))) \
             .fix(raise_exception) \

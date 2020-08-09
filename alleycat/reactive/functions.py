@@ -10,6 +10,7 @@ from rx import Observable
 from . import ReactiveValue
 from . import utils
 from .property import ReactiveProperty
+from .value import DATA_KEY
 from .view import ReactiveView
 
 T = TypeVar("T")
@@ -105,7 +106,7 @@ def dispose(obj) -> None:
     if obj is None:
         raise ValueError("Cannot dispose a None object.")
 
-    properties = getattr(obj, ReactiveProperty.KEY, {}).values()
+    properties = getattr(obj, DATA_KEY, {}).values()
 
     for p in properties:
         p.dispose()
