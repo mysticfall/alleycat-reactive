@@ -171,6 +171,19 @@ class ReactivePropertyTest(unittest.TestCase):
         self.assertEqual(ReactiveProperty, type(prop))
         self.assertEqual("value", prop.name)
 
+    def test_instance_identity(self):
+        class Fixture:
+            value = rv.from_value(1)
+
+        fixture = Fixture()
+        fixture.value = 2
+
+        self.assertEqual(2, fixture.value)
+
+        fixture = Fixture()
+
+        self.assertEqual(1, fixture.value)
+
     def test_map(self):
         class Fixture:
             name = ReactiveProperty(Some("wolf"))
