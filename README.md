@@ -89,7 +89,7 @@ property classes you can use for that purpose.
 #### Reactive Property
 
 Firstly, there is a type of property that can manage its state, which is implemented by 
-_ReactiveProperty[T]_ class. To define such a property using an initial value, you can use 
+`ReactiveProperty[T]` class. To define such a property using an initial value, you can use 
 a helper function from_value as follows:
 
 ```python
@@ -167,7 +167,7 @@ luftballons = []
 
 rv.observe(nena.ballons).subscribe(luftballons.append) # Returns a Disposable. See Rx API.
 
-print(luftballons) # [98]
+print(luftballons) # Returns [98].
 
 nena.ballons = nena.ballons + 1
 
@@ -233,7 +233,6 @@ so that it can be used to initialize an associated view.
 The code below shows how you can derive a view from an existing reactive property:
 
 ```python
-import rx
 from alleycat.reactive import functions as rv
 
 class Example:
@@ -262,9 +261,34 @@ counter = Counter()
 
 counter.word = "Supercalifragilisticexpialidocious!"
 
-print(counter.count) # Prints "The word has 35 letter(s)". Wait, did you really count that?
+print(counter.count) # Prints "The word has 35 letter(s)". Wait, did you actuallyy count that?
 ```
-_(TBA)_
+
+But what if you want to use other Rx operators, like `scan` or `merge`? In that case, 
+you can use `pipe` just like you would with an _Observable_ instance:
+
+```python
+from rx import operators as ops
+from alleycat.reactive import functions as rv
+
+class CrowsCounter:
+    animal = rv.new_property()
+
+    crows = animal.as_view().pipe(
+        ops.map(str.lower),
+        ops.filter(lambda v: v == "crow"),
+        ops.map(lambda _: 1),
+        ops.scan(lambda v1, v2: v1 + v2, 0))
+
+counting = CrowsCounter()
+
+counting.animal = "cat"
+counting.animal = "Crow"
+counting.animal = "CROW"
+counting.animal = "dog"
+
+print(counting.crows) # Returns 2.
+```
 
 #### Composition
 
