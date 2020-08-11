@@ -19,8 +19,8 @@ class ReactiveValueTest(unittest.TestCase):
 
         counting = CrowsCounter()
 
-        counting.animal = "cat"
         counting.animal = "Crow"
+        counting.animal = "cat"
 
         counts = []
 
