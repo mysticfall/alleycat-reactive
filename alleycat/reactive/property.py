@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TypeVar, Generic, Callable, Optional, Any, cast
 
 import rx
-from returns.pipeline import pipe as pipe_
 from returns.functions import identity, compose
 from returns.maybe import Maybe, Nothing
+from returns.pipeline import pipe as pipe_
 from rx import Observable
 from rx.subject import BehaviorSubject
 
@@ -20,31 +20,30 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             self,
             init_value: Maybe[T] = Nothing,
             read_only=False,
-            parent: Optional[ReactiveValue] = None,
             pre_modifier: Callable[[T], T] = identity,
             post_modifier: Callable[[Observable], Observable] = identity) -> None:
 
-        super().__init__(read_only, parent)
+        super().__init__(read_only)
 
         self.init_value = init_value
         self.pre_modifier = pre_modifier
         self.post_modifier = post_modifier
 
     def as_view(self) -> ReactiveView[T]:
-        return ReactiveView(self.context, self.read_only, self)
+        return ReactiveView(self.context, self.read_only)
 
     def pipe(self, *modifiers: Callable[[Observable], Observable]) -> ReactiveProperty:
         stack = [self.post_modifier] + list(modifiers)
 
         return ReactiveProperty(
-            self.init_value, self.read_only, self, self.pre_modifier, pipe_(*stack))  # type:ignore
+            self.init_value, self.read_only, self.pre_modifier, pipe_(*stack))  # type:ignore
 
     def premap(self, modifier: Callable[[T], T]) -> ReactiveProperty[T]:
         if modifier is None:
             raise ValueError("Argument 'modifier' is required.")
 
         return ReactiveProperty(
-            self.init_value, self.read_only, self, compose(self.pre_modifier, modifier), self.post_modifier)
+            self.init_value, self.read_only, compose(self.pre_modifier, modifier), self.post_modifier)
 
     class PropertyData(ReactiveValue.Data[T]):
 

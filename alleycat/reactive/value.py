@@ -28,10 +28,9 @@ class ReactiveValue(Generic[T], ABC):
 
     __slots__ = ()
 
-    def __init__(self, read_only=False, parent: Optional[ReactiveValue] = None) -> None:
+    def __init__(self, read_only=False) -> None:
         self._name: Optional[str] = None
         self.read_only = read_only
-        self.parent = Maybe.from_value(parent)
 
         data: RequiresContext[Any, ReactiveValue.Data[T]] = RequiresContext(lambda obj: self._get_data(obj))
 
@@ -41,10 +40,7 @@ class ReactiveValue(Generic[T], ABC):
 
     @property
     def name(self) -> Optional[str]:
-        # Try persuading Mypy to see reason here... I gave up *shrug*.
-        # On a side note, we don't use Some() here to avoid object instantiation per every value reference (_get_data).
-        return self._name if self._name is not None else \
-            self.parent.map(lambda p: p.name).value_or(None)  # type: ignore
+        return self._name
 
     def observable(self, obj: Any) -> Observable:
         if obj is None:
@@ -109,11 +105,13 @@ class ReactiveValue(Generic[T], ABC):
 
     class Data(Generic[U], Disposable):
 
-        def __init__(self, name: str, observable: Observable, modifier: Callable[[Observable], Observable] = identity):
-            assert str is not None
+        def __init__(self,
+                     name: Optional[str],
+                     observable: Observable,
+                     modifier: Callable[[Observable], Observable] = identity):
             assert observable is not None
 
-            self.name = name
+            self.name = Maybe.from_value(name)
 
             self._value: Optional[U] = None
 
@@ -130,9 +128,12 @@ class ReactiveValue(Generic[T], ABC):
 
             self._cancel_update = self.observable.subscribe(update, raise_exception)
 
+        def label(self) -> str:
+            return self.name.value_or("(anonymous)")
+
         def _check_disposed(self) -> None:
             if self.disposed:
-                raise AttributeError(f"Property '{self.name}' has been disposed.")
+                raise AttributeError(f"Property '{self.label()}' has been disposed.")
 
         @property
         def initialized(self) -> bool:
@@ -141,7 +142,7 @@ class ReactiveValue(Generic[T], ABC):
         @property
         def value(self) -> U:
             if not self.initialized:
-                raise AttributeError(f"Property '{self.name}' is not initialized yet.")
+                raise AttributeError(f"Property '{self.label()}' is not initialized yet.")
 
             assert self._value is not None  # Again, to appease the wrath of the Mypyan god.
 
@@ -178,7 +179,7 @@ class ReactiveValue(Generic[T], ABC):
         assert obj is not None
 
         if self.name is None:
-            raise AttributeError("The class must be instantiated as a property of a class.")
+            return self._create_data(obj)
 
         def initialize(container: Any, key: str, default: Callable[[], Any], _: Exception):
             value = default()
