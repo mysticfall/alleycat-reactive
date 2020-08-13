@@ -35,15 +35,15 @@ def from_observable(value: Optional[Observable] = None, read_only=False) -> Reac
     return ReactiveView(init_value, read_only)
 
 
-def combine(*values: ReactiveValue) -> Callable[[Callable[[Sequence[Observable]], Observable]], ReactiveView]:
+def combine(*values: ReactiveValue) -> Callable[[Callable[[VarArg(Observable)], Observable]], ReactiveView]:
     if len(values) == 0:
         raise ValueError("At least one argument is required.")
 
-    def process(modifier: Callable[[Sequence[Observable]], Observable]):
+    def process(modifier: Callable[[VarArg(Observable)], Observable]):
         if modifier is None:
             raise ValueError("Argument 'modifier' is required.")
 
-        init_value = RequiresContext.from_iterable([v.context for v in values]).map(modifier)
+        init_value = RequiresContext.from_iterable([v.context for v in values]).map(lambda v: modifier(*v))
 
         return ReactiveView(init_value)
 

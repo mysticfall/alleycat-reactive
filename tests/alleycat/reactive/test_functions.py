@@ -117,7 +117,7 @@ class FunctionsTest(unittest.TestCase):
 
             doubled = value.as_view().map(lambda v: v * 2)
 
-            numbers = rv.combine(value, doubled)(lambda o: rx.combine_latest(*o))
+            numbers = rv.combine(value, doubled)(rx.combine_latest)
 
             combined = rv.combine_latest(value, doubled)(ops.map(lambda v: f"value = {v[0]}, doubled = {v[1]}"))
 
