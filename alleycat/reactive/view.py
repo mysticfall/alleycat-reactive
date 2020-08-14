@@ -15,7 +15,7 @@ class ReactiveView(Generic[T], ReactiveValue[T]):
     def __init__(self, init_value: RequiresContext[Observable, Any], read_only=True) -> None:
         super().__init__(read_only)
 
-        self.init_value = init_value
+        self._init_value = init_value
 
     def pipe(self, *modifiers: Callable[[Observable], Observable]) -> ReactiveView:
         return ReactiveView(self.context.map(lambda o: o.pipe(*modifiers)), self.read_only)
@@ -23,7 +23,7 @@ class ReactiveView(Generic[T], ReactiveValue[T]):
     def _create_data(self, obj: Any) -> ReactiveValue.Data:
         assert obj is not None
 
-        return self.Data(self.name, self.init_value(obj))
+        return self.Data(self.name, self._init_value(obj))
 
     def _get_data(self, obj: Any) -> ReactiveValue.Data:
         return super()._get_data(obj)

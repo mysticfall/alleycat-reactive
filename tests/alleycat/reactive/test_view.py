@@ -15,7 +15,6 @@ class ReactiveViewTest(unittest.TestCase):
     def test_initialization(self):
         init_value = RequiresContext.from_value(rx.empty())
 
-        self.assertEqual(init_value, ReactiveView(init_value).init_value)
         self.assertEqual(True, ReactiveView(init_value).read_only)
         self.assertEqual(True, ReactiveView(init_value, True).read_only)
         self.assertEqual(False, ReactiveView(init_value, False).read_only)
