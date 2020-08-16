@@ -1,5 +1,6 @@
 import unittest
 
+from returns.functions import identity
 from rx import operators as ops
 
 from alleycat.reactive import functions as rv
@@ -36,6 +37,37 @@ class ReactiveValueTest(unittest.TestCase):
 
         self.assertEqual(2, counting.crows)
         self.assertEqual([1, 2], counts)
+
+    def test_name_inference(self):
+        class Fixture:
+            shallow = rv.new_property(1)
+
+            passed = rv.new_property(1).map(lambda v: v + 1).map(lambda v: v + 1).as_view()
+
+            deep = rv.combine_latest(shallow, passed)(ops.map(identity)).map(identity)
+
+        self.assertEqual("shallow", Fixture.shallow.name)
+        self.assertEqual("passed", Fixture.passed.name)
+        self.assertEqual("deep", Fixture.deep.name)
+
+    def test_emitting_order(self):
+        class Fixture:
+            value = rv.from_value(1)
+
+            doubled = value.as_view().map(lambda v: v * 2)
+
+        values = []
+
+        fixture = Fixture()
+
+        rv.observe(fixture.value).subscribe(values.append)
+        rv.observe(fixture.doubled).subscribe(values.append)
+
+        self.assertEqual([1, 2], values)
+
+        fixture.value = 3
+
+        self.assertEqual([1, 2, 6, 3], values)
 
 
 if __name__ == '__main__':
