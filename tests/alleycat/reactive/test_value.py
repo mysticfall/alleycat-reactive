@@ -24,6 +24,8 @@ class ReactiveValueTest(unittest.TestCase):
 
         counts = []
 
+        # Even though this is the first reference of 'crows', it correctly reports the aggregated data,
+        # because it was eagerly initialized after the instantiation.
         rv.observe(counting.crows).subscribe(counts.append)
 
         self.assertEqual(1, counting.crows)
@@ -32,8 +34,6 @@ class ReactiveValueTest(unittest.TestCase):
         counting.animal = "CROW"
         counting.animal = "dog"
 
-        # Even though this is the first reference of 'crows', it correctly reports the aggregated data,
-        # because it was eagerly initialized after the instantiation.
         self.assertEqual(2, counting.crows)
         self.assertEqual([1, 2], counts)
 
