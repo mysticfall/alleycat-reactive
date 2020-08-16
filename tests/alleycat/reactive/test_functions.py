@@ -62,16 +62,9 @@ class FunctionsTest(unittest.TestCase):
         class MaryPoppins(ReactiveObject):
             song = rv.from_value("Supercalifragilisticexpialidocious")
 
-            info = rv.new_view()
-
-            def __init__(self):
-                # TODO: This is not really a good usage example. We should look into more practical
-                #  use cases and establish best practices once we are done implementing the core features.
-                self.info = rv.observe(self.song).pipe(
-                    ops.scan(lambda total, _: total + 1, 0),
-                    ops.map(lambda count: f"Mary has sung {count} song(s)."),
-                    ops.publish(),
-                    ops.ref_count())
+            info = song.as_view().pipe(
+                ops.scan(lambda total, _: total + 1, 0),
+                ops.map(lambda count: f"Mary has sung {count} song(s)."))
 
         poppins = MaryPoppins()
 

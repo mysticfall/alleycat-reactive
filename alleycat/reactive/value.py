@@ -118,7 +118,8 @@ class ReactiveValue(Generic[T], ABC):
             self._initialized = False
             self._disposed = False
             self._subject = BehaviorSubject(observable)
-            self._observable = modifier(self._subject.pipe(ops.switch_latest()))
+            self._observable = modifier(self._subject.pipe(ops.switch_latest())) \
+                .pipe(ops.share(), ops.replay(buffer_size=1))
 
             def update(value):
                 if not self.initialized:
@@ -127,6 +128,7 @@ class ReactiveValue(Generic[T], ABC):
                 self._value = value  # We don't use Some(value) here to avoid excessive object allocations.
 
             self._cancel_update = self.observable.subscribe(update, raise_exception)
+            self._observable.connect()  # type:ignore
 
         def label(self) -> str:
             return self.name.value_or("(anonymous)")
