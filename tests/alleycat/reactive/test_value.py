@@ -1,5 +1,7 @@
 import unittest
+from time import sleep
 
+import rx
 from returns.functions import identity
 from rx import operators as ops
 
@@ -91,6 +93,41 @@ class ReactiveValueTest(unittest.TestCase):
         fixture.extended = 2
 
         self.assertEqual(12, fixture.extended)
+
+    def test_del_hook(self):
+        spans = []
+        calls = []
+
+        class Fixture:
+            steeleye = rv.from_observable(rx.interval(1))
+
+            span = steeleye.map(lambda _: "All around my hat")
+
+            def __init__(self, values, invokes):
+                self.invokes = invokes
+
+                rv.observe(self, "span").subscribe(values.append)
+
+            def __del__(self):
+                self.invokes.append("I will wear the green willow.")
+
+        # noinspection PyUnusedLocal
+        fixture = Fixture(spans, calls)
+
+        sleep(2)
+
+        count = len(spans)
+
+        self.assertGreater(count, 0)
+        self.assertEqual([], calls)
+
+        del fixture
+
+        self.assertEqual(["I will wear the green willow."], calls)
+
+        sleep(2)
+
+        self.assertEqual(count, len(spans))
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections import Mapping
 from functools import partial
 from typing import TypeVar, Generic, Callable, Optional, Union, Any
 
@@ -81,6 +82,25 @@ class ReactiveValue(Generic[T], ABC):
 
             setattr(cls, "__init__", init_hook)
 
+        if "del" not in metadata:
+            try:
+                metadata["del"] = getattr(cls, "__del__")
+            except AttributeError:
+                def noop(_: Any):
+                    pass
+
+                metadata["del"] = noop
+
+            def del_hook(instance):
+                data: Mapping[str, ReactiveValue.Data] = getattr(instance, DATA_KEY, [])
+
+                for d in filter(lambda v: not v.disposed, data.values()):
+                    d.dispose()
+
+                metadata["del"](instance)
+
+            setattr(cls, "__del__", del_hook)
+
     def __set_name__(self, cls, name):
         self._name = name
 
@@ -130,7 +150,7 @@ class ReactiveValue(Generic[T], ABC):
                 self._value = value  # We don't use Some(value) here to avoid excessive object allocations.
 
             self._cancel_update = self.observable.subscribe(update, raise_exception)
-            self._observable.connect()  # type:ignore
+            self._connection = self._observable.connect()  # type:ignore
 
         def label(self) -> str:
             return self.name.value_or("(anonymous)")
@@ -172,6 +192,7 @@ class ReactiveValue(Generic[T], ABC):
         def dispose(self) -> None:
             self._check_disposed()
             self._cancel_update.dispose()
+            self._connection.dispose()
 
             self._disposed = True
 
