@@ -69,6 +69,29 @@ class ReactiveValueTest(unittest.TestCase):
 
         self.assertEqual([1, 2, 6, 3], values)
 
+    def test_extending_attributes(self):
+        class GrandParent:
+            inherited = rv.from_value("A")
+
+            extended = rv.from_value(1)
+
+            from_init = rv.from_value(1)
+
+        class Parent(GrandParent):
+            extended = GrandParent.extended.map(lambda v: v * 2)
+
+        class Child(Parent):
+            extended = Parent.extended.map(lambda v: v * 3)
+
+        fixture = Child()
+
+        self.assertEqual("A", fixture.inherited)
+        self.assertEqual(6, fixture.extended)
+
+        fixture.extended = 2
+
+        self.assertEqual(12, fixture.extended)
+
 
 if __name__ == '__main__':
     unittest.main()

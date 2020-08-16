@@ -74,8 +74,10 @@ class ReactiveValue(Generic[T], ABC):
             def init_hook(instance, *args, **kwargs):
                 metadata["init"](instance, *args, **kwargs)
 
+                concrete_type = type(instance)
+
                 for value in metadata["values"]:
-                    getattr(cls, value).context(instance)
+                    getattr(concrete_type, value).context(instance)
 
             setattr(cls, "__init__", init_hook)
 
