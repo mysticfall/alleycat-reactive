@@ -2,6 +2,7 @@ import unittest
 from typing import Optional
 
 import rx
+from returns.functions import identity
 from rx import operators as ops
 from rx.subject import BehaviorSubject
 
@@ -111,42 +112,66 @@ class FunctionsTest(unittest.TestCase):
 
         self.assertEqual("Mary has sung 4 song(s).", info)
 
-    def test_map_combinators(self):
+    def test_combine(self):
         class Fixture:
             value = rv.from_value(1)
 
             doubled = value.as_view().map(lambda v: v * 2)
 
-            numbers = rv.combine(value, doubled)(rx.combine_latest)
+            combined = rv.combine(value, doubled)(rx.combine_latest)
 
-            combined = rv.combine_latest(value, doubled)(ops.map(lambda v: f"value = {v[0]}, doubled = {v[1]}"))
+        combined = []
+
+        fixture = Fixture()
+
+        rv.observe(fixture.combined).subscribe(combined.append)
+
+        self.assertEqual([(1, 2)], combined)
+
+        fixture.value = 3
+
+        self.assertEqual([(1, 2), (1, 6), (3, 6)], combined)
+
+    def test_combine_latest(self):
+        class Fixture:
+            value = rv.from_value(1)
+
+            doubled = value.as_view().map(lambda v: v * 2)
+
+            combined = rv.combine_latest(value, doubled)(identity)
+
+        combined = []
+
+        fixture = Fixture()
+
+        rv.observe(fixture.combined).subscribe(combined.append)
+
+        self.assertEqual([(1, 2)], combined)
+
+        fixture.value = 3
+
+        self.assertEqual([(1, 2), (1, 6), (3, 6)], combined)
+
+    def test_zip(self):
+        class Fixture:
+            value = rv.from_value(1)
+
+            doubled = value.as_view().map(lambda v: v * 2)
 
             zipped = rv.zip(value, doubled)(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))
 
-        combined = []
         zipped = []
 
         fixture = Fixture()
 
         rv.observe(fixture.zipped).subscribe(zipped.append)
-        rv.observe(fixture.combined).subscribe(combined.append)
 
-        self.assertEqual(1, fixture.value)
-        self.assertEqual(2, fixture.doubled)
-        self.assertEqual((1, 2), fixture.numbers)
-        self.assertEqual("value = 1, doubled = 2", fixture.combined)
         self.assertEqual("1 * 2 = 2", fixture.zipped)
-        self.assertEqual(["value = 1, doubled = 2"], combined)
         self.assertEqual(["1 * 2 = 2"], zipped)
 
         fixture.value = 3
 
-        self.assertEqual(3, fixture.value)
-        self.assertEqual(6, fixture.doubled)
-        self.assertEqual((3, 6), fixture.numbers)
-        self.assertEqual("value = 3, doubled = 6", fixture.combined)
         self.assertEqual("3 * 2 = 6", fixture.zipped)
-        self.assertEqual(["value = 1, doubled = 2", "value = 3, doubled = 2", "value = 3, doubled = 6"], combined)
         self.assertEqual(["1 * 2 = 2", "3 * 2 = 6"], zipped)
 
 
