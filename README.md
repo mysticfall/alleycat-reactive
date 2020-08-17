@@ -50,7 +50,7 @@ In a traditional OOP system, properties of an object are mere values which are o
 mutable, but not observable by default. To observe the change of a property over time, we 
 must use an observer pattern, usually in the form of a separate event.
 
-Some implementation of Rx allows converting such an event into an Observable. Still, it 
+Some implementation of Rx allows converting such an event into an _Observable_. Still, it 
 can be a tedious task to define an event for every such property, and it requires a lot of 
 boilerplate code to convert them into Rx pipelines.
 
@@ -64,7 +64,7 @@ inheritance hierarchies. They may reference, extend, or redefine properties of t
 parents or associated objects to express the behaviours and traits of the domain concepts 
 they represent.
 
-And there is another problem with using Observables in such a manner. Once you build an Rx 
+And there is another problem with using _Observables_ in such a manner. Once you build an Rx 
 pipeline, you can't retrieve the value flowing inside unless you write still more boilerplate 
 code to subscribe to the stream and store its value to an outside variable.
 
@@ -80,13 +80,13 @@ while still being able to observe and compose them like in Rx?
 
 And that is what this project is trying to achieve.
 
-### Usage
+## Usage
 
 To achieve the goal outlined in the previous section, we provide a way to define a property 
 which can also turn into an _Observable_. And there are two different types of such 
 property classes you can use for that purpose.
 
-#### Reactive Property
+### Reactive Property
 
 Firstly, there is a type of property that can manage its state, which is implemented by 
 `ReactiveProperty[T]` class. To define such a property using an initial value, you can use 
@@ -150,7 +150,7 @@ place.read_only = "Let me rewind." # Throws an AttributeError
 But haven't we talked about Rx? Of course, we have! And that's the whole point of 
 the library, after all.
 
-To convert a reactive property into an Observable of the same type, you can use observe 
+To convert a reactive property into an _Observable_ of the same type, you can use observe 
 method like this:
 
 ```python
@@ -182,7 +182,7 @@ To learn about all the exciting things we can do with an _Observable_, you may w
 read the official documentation of Rx. We will introduce a few examples later, but before 
 that, we better learn about the other variant of the reactive value first.
 
-#### Reactive View
+### Reactive View
 
 ReactiveView is another derivative of _ReactiveValue_, from which `ReactiveProperty` is 
 also derived (hence, the alias of `functions` module used above, _"rv"_).
@@ -227,7 +227,7 @@ when you set a value of a reactive view is the source _Observable_ that the view
 not the data itself, as is the case with a reactive property.
 
 Lastly, you can convert a reactive property into a view by calling its `as_view` method. 
-It's a convenient shortcut to call `observe` to obtain an Observable of a reactive property 
+It's a convenient shortcut to call `observe` to obtain an _Observable_ of a reactive property 
 so that it can be used to initialize an associated view.
 
 The code below shows how you can derive a view from an existing reactive property:
@@ -242,7 +242,7 @@ class Example:
     view = value.as_view()
 ```
 
-#### Transform
+### Transformation
 
 As we know how to create reactive properties and values, now it's time to learn how to 
 transform them. Both variants of `ReactiveValue` provides `map` method, with which you 
@@ -261,7 +261,7 @@ counter = Counter()
 
 counter.word = "Supercalifragilisticexpialidocious!"
 
-print(counter.count) # Prints "The word has 35 letter(s)". Wait, did you actuallyy count that?
+print(counter.count) # Prints "The word has 35 letter(s)". Wait, did you actually count that?
 ```
 
 But what if you want to use other Rx operators, like `scan` or `merge`? In that case, 
@@ -289,12 +289,95 @@ counting.animal = "dog"
 
 print(counting.crows) # Returns 2.
 ```
+On a side note, the aggregation performed by `crows` in the above example reports the 
+correct value even when there is no explicit subscription in the code. It is because 
+all properties and views in this library are published as 'hot' _Observables_ by default.
 
-#### Composition
+It was a design decision to make aggregation more intuitive and less error-prone. You 
+don't have to understand such an implementation detail unless you come across a problem. 
+However, if you have a use case where it would be either necessary or significantly 
+efficient to make reactive values 'cold', please feel free to open a feature request.
 
-_(TBA)_
+### Operators
 
-### Install
+Sometimes, you may need to combine several properties of an object to derive another 
+of its attribute. For example, you can merge two or more reactive values to define a 
+new one which emits a value whenever one of its sources does, as follows:
+
+```python
+from alleycat.reactive import functions as rv
+
+class Fixture:
+    cats = rv.new_property()
+
+    dogs = rv.new_property()
+
+    pets = rv.merge(cats, dogs)
+
+pets = []
+
+fixture = Fixture()
+
+rv.observe(fixture, "pets").subscribe(pets.append)
+
+fixture.cats = "Garfield"
+fixture.cats = "Grumpy"
+fixture.cats = "Cat who argues with a woman over a salad bowl"  # What was his name?
+
+fixture.dogs = "Pompidou"  # Sorry, I'm a cat person so I don't know too many canine celebrities.
+
+print(pets) # The array contains all of the names mentioned above.
+```
+
+Imagine you have a `Rectangle` class which declares its `width` and `height` as reactive 
+properties. It would be nice if you can somehow define its `area` property based upon 
+the rectangle's dimension in a declarative manner.
+
+However, merely merging `width` and `height` properties won't automatically calculate 
+the size of the shape. In this case, you can use `combine_latest` to calculate the size 
+with the latest values of `width` and `height`, whenever either of them is changed:
+
+```python
+from alleycat.reactive import functions as rv
+
+class Rectangle:
+    width = rv.new_property(100)
+
+    height = rv.new_property(200)
+
+    area = rv.combine_latest(width, height)(lambda v: v[0] * v[1])
+
+rectangle = Rectangle()
+
+print(rectangle.area) # Prints 20,000... you do the math!
+
+rectangle.width = 150
+
+print(rectangle.area) # Prints 30,000.
+
+rectangle.height = 50
+
+print(rectangle.area) # Prints 750.
+```
+
+There's another operator called `zip` whose semantic matches that of the API with the 
+same name in Rx. In fact, you can use most of the operators Rx provides by applying them 
+over _Observables_ extracted by `combine` method. For instance, you can rewrite the 
+above example code  with `combine_latest` operator provided by Rx as follows:
+
+```python
+import rx
+from alleycat.reactive import functions as rv
+
+class Rectangle:
+    width = rv.new_property(100)
+
+    height = rv.new_property(200)
+
+    area = rv.combine(width, height)(rx.combine_latest).map(lambda v: v[0] * v[1])
+```
+
+## Install
 
 The library can be installed using `pip` as follows:
 ```shell script
