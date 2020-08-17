@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="alleycat-reactive",
-    version="0.1.1",
+    version="0.2.0",
     author="Xavier Cho",
     author_email="mysticfallband@gmail.com",
     description="A simple Python library to provide an API to implement the Reactive Object Pattern (ROP).",
