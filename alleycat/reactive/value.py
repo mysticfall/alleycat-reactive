@@ -14,6 +14,8 @@ from rx import operators as ops
 from rx.core.typing import Disposable
 from rx.subject import BehaviorSubject
 
+from alleycat.reactive import utils
+
 T = TypeVar("T")
 U = TypeVar("U")
 
@@ -166,7 +168,14 @@ class ReactiveValue(Generic[T], ABC):
         @property
         def value(self) -> U:
             if not self.initialized:
-                raise AttributeError(f"Property '{self.label()}' is not initialized yet.")
+                # FIXME: This is a bad design but also something unavoidable if we want to call 'observe' on
+                #  an uninitialized value.
+                observed = utils.get_current_frame(7).map(utils.is_invoked_from_observe).value_or(False)
+
+                if observed:
+                    return None  # type:ignore
+                else:
+                    raise AttributeError(f"Property '{self.label()}' is not initialized yet.")
 
             assert self._value is not None  # Again, to appease the wrath of the Mypyan god.
 

@@ -105,6 +105,21 @@ class FunctionsTest(unittest.TestCase):
 
         self.assertEqual("Mary has sung 4 song(s).", info)
 
+    def test_observe_uninitialized(self):
+        class Fixture:
+            value = rv.new_property()
+
+        values = []
+
+        fixture = Fixture()
+
+        rv.observe(fixture.value).subscribe(values.append)
+
+        fixture.value = 1
+        fixture.value = 2
+
+        self.assertEqual([1, 2], values)
+
     def test_combine(self):
         class Fixture:
             value = rv.from_value(1)

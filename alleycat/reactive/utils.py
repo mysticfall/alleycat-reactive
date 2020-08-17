@@ -65,6 +65,26 @@ def get_property_reference(frame: FrameType) -> Maybe[Tuple[Any, str]]:
     return Nothing
 
 
+def is_invoked_from_observe(frame: FrameType) -> bool:
+    if frame is None:
+        raise ValueError("Argument 'frame' is required.")
+
+    try:
+        result = flow(
+            dis.get_instructions(frame.f_code),
+            lambda s: takewhile(lambda i: i.offset != frame.f_lasti, s),
+            lambda s: reversed(list(s)),
+            lambda s: dropwhile(lambda i: i.opname == "LOAD_FAST", s),
+            lambda s: next(s),
+            lambda s: s.opname == "LOAD_METHOD" and s.argval == "observe")
+
+        return result
+    except (StopIteration, ValueError):
+        pass
+
+    return False
+
+
 def get_instructions(frame: FrameType) -> Iterator[dis.Instruction]:
     if frame is None:
         raise ValueError("Argument 'frame' is required.")

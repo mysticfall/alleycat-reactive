@@ -78,9 +78,6 @@ def _combine_with(values: Sequence[ReactiveValue], combinator: Callable[[VarArg(
 
 
 def observe(obj, name: Optional[str] = None) -> Observable:
-    if obj is None:
-        raise ValueError("Cannot observe a None object.")
-
     def infer_name(extractor: Callable[[FrameType], Maybe[T]], depth: int) -> Callable[[], T]:
         def process():
             value = utils.get_current_frame(depth + 1).bind(extractor).value_or(None)
