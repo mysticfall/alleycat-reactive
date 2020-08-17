@@ -267,6 +267,7 @@ from rx import operators as ops
 from alleycat.reactive import functions as rv
 
 class CrowsCounter:
+
     animal = rv.new_property()
 
     crows = animal.as_view().pipe(
@@ -303,6 +304,7 @@ new one which emits a value whenever one of its sources does, as follows:
 from alleycat.reactive import functions as rv
 
 class Fixture:
+
     cats = rv.new_property()
 
     dogs = rv.new_property()
@@ -336,6 +338,7 @@ with the latest values of `width` and `height`, whenever either of them is chang
 from alleycat.reactive import functions as rv
 
 class Rectangle:
+
     width = rv.from_value(100)
 
     height = rv.from_value(200)
@@ -365,6 +368,7 @@ import rx
 from alleycat.reactive import functions as rv
 
 class Rectangle:
+
     width = rv.from_value(100)
 
     height = rv.from_value(200)
