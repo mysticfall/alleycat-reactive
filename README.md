@@ -20,24 +20,21 @@ and highly experimental.
 As such, there can be significant changes in the API at any time in future. Furthermore, the project 
 may even be discontinued in case the idea it is based upon proves to be an infeasible one.
 
-So, please use it at your discretion.
+So, please use it at your discretion and consider opening an issue if you encounter a problem.
 
 ## Reactive Object Pattern
 
-The library provides an API to implement what we term as _Reactive Object Pattern_ or _ROP_ 
-for short. Despite its rather pretentious name, it merely means defining class properties 
+AlleyCat Reactive provides an API to implement what we term as _Reactive Object Pattern_ or 
+_ROP_ for short. Despite its rather pretentious name, it merely means defining class properties 
 which can also serve as an _Observable_ in Rx.
 
 But why do we need such a thing?
-
-Arguably, the most significant benefit that any functional approach brings could be its 
-ability to define a process or a value in a declarative manner. 
 
 We won't delve into this subject too much since you can learn about the concept from many 
 other websites.
 
 In short, it's much better to define data in a declarative manner, or as "data pipelines", 
-especially when it's changing over time. Rx is all about composing and manipulating such 
+especially when it's changing over time. And Rx is all about composing and manipulating such 
 pipelines in a potentially asynchronous context.
 
 But what if the data does not come from an asynchronous source, like Tweets or GUI events, 
