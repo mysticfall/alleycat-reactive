@@ -37,8 +37,8 @@ In short, it's much better to define data in a declarative manner, or as "data p
 especially when it's changing over time. And Rx is all about composing and manipulating such 
 pipelines in a potentially asynchronous context.
 
-But what if the data does not come from an asynchronous source, like Tweets or GUI events, 
-but simple properties objects? Of course, Rx can handle synchronous data as well, but the 
+But what if the data do not come from an asynchronous source, like Tweets or GUI events, 
+but are just properties of an object? Of course, Rx can handle synchronous data as well, but the 
 cost of using it may outweigh the benefits in such a scenario.
 
 In a traditional OOP system, properties of an object are mere values which are often 
