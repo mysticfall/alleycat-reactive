@@ -94,6 +94,37 @@ class ReactiveValueTest(unittest.TestCase):
 
         self.assertEqual(12, fixture.extended)
 
+    def test_init_hook(self):
+        class Bangles:
+            song = rv.new_property()
+
+            hits = song.as_view().pipe(ops.map(lambda _: 1), ops.scan(lambda v1, v2: v1 + v2, 0))
+
+            def __init__(self, hit, *years_active, **members):
+                self.hit = hit
+                self.years_active = years_active
+                self.members = members
+
+        members = {
+            "vocal": "Susanna Hoffs",
+            "drums": "Debbi Peterson",
+            "bass": "Michael Steele",
+            "guitar": "Vicki Peterson"
+        }
+
+        bangles = Bangles("Walk Like an Egyptian", "1981–1989", "1998–present", **members)
+
+        bangles.song = "If She Knew What She Wants"
+        bangles.song = "Manic Monday"
+
+        self.assertEqual("Walk Like an Egyptian", bangles.hit)
+        self.assertEqual(("1981–1989", "1998–present"), bangles.years_active)
+        self.assertIsNotNone(bangles.members)
+        self.assertEqual("Susanna Hoffs", bangles.members["vocal"])
+
+        # Eager initialization should still work with an explict constructor:
+        self.assertEqual(2, bangles.hits)
+
     def test_del_hook(self):
         spans = []
         calls = []
