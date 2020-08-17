@@ -145,6 +145,28 @@ class FunctionsTest(unittest.TestCase):
 
         self.assertEqual([(1, 2), (1, 6), (3, 6)], combined)
 
+    def test_merge(self):
+        class Fixture:
+            cats = rv.new_property()
+
+            dogs = rv.new_property()
+
+            pets = rv.merge(cats, dogs)
+
+        pets = []
+
+        fixture = Fixture()
+
+        rv.observe(fixture, "pets").subscribe(pets.append)
+
+        fixture.cats = "Garfield"
+        fixture.cats = "Grumpy"
+        fixture.cats = "Cat who argues with a woman over a salad bowl"  # What was his name?
+
+        fixture.dogs = "Pompidou"  # Sorry, I'm a cat person so I don't know too many canine celebrities.
+
+        self.assertEqual(["Garfield", "Grumpy", "Cat who argues with a woman over a salad bowl", "Pompidou"], pets)
+
     def test_zip(self):
         class Fixture:
             value = rv.from_value(1)

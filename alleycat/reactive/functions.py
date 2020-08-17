@@ -54,6 +54,10 @@ def combine_latest(*values: ReactiveValue) -> Callable[[Callable[[Observable], O
     return _combine_with(values, rx.combine_latest)
 
 
+def merge(*values: ReactiveValue) -> ReactiveView:
+    return combine(*values)(rx.merge)
+
+
 # noinspection PyShadowingBuiltins
 def zip(*values: ReactiveValue) -> Callable[[Callable[[Observable], Observable]], ReactiveView]:
     return _combine_with(values, rx.zip)
