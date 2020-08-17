@@ -1,3 +1,4 @@
+![build](https://github.com/mysticfall/alleycat-reactive/workflows/Python%20application/badge.svg)
 # AlleyCat - Reactive
 
 A part of the AlleyCat project which supports the _Reactive Object Pattern_.
