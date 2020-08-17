@@ -17,8 +17,10 @@ Even though it is already available on [PyPI repository](https://pypi.org/projec
 as `alleycat-reactive` package, the project is currently at a proof-of-concept stage 
 and highly experimental.
 
-As such, there can be significant changes in the API at any time. Furthermore, the project 
-may be discontinued in future if the idea proves to be an unuseful one.
+As such, there can be significant changes in the API at any time in future. Furthermore, the project 
+may even be discontinued in case the idea it is based upon proves to be an infeasible one.
+
+So, please use it at your discretion.
 
 ## Reactive Object Pattern
 
@@ -27,12 +29,6 @@ for short. Despite its rather pretentious name, it merely means defining class p
 which can also serve as an _Observable_ in Rx.
 
 But why do we need such a thing?
-
-If you are a seasoned programmer of an OOP language (which includes Python, by the way), 
-you may feel like the paradigm already provides everything you need.
-
-On the other hand, if you are already familiar with Rx, you may wonder what OOP has to do 
-with the concept, as it's mostly about composing functions, not classes or properties.
 
 Arguably, the most significant benefit that any functional approach brings could be its 
 ability to define a process or a value in a declarative manner. 
