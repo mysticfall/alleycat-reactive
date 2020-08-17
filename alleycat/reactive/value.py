@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections import Mapping
 from functools import partial
-from typing import TypeVar, Generic, Callable, Optional, Union, Any
+from typing import TypeVar, Generic, Callable, Optional, Union, Any, Mapping
 
 from returns.context import RequiresContext
 from returns.functions import raise_exception, identity
