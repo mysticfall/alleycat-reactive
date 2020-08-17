@@ -336,9 +336,9 @@ with the latest values of `width` and `height`, whenever either of them is chang
 from alleycat.reactive import functions as rv
 
 class Rectangle:
-    width = rv.new_property(100)
+    width = rv.from_value(100)
 
-    height = rv.new_property(200)
+    height = rv.from_value(200)
 
     area = rv.combine_latest(width, height)(lambda v: v[0] * v[1])
 
@@ -365,9 +365,9 @@ import rx
 from alleycat.reactive import functions as rv
 
 class Rectangle:
-    width = rv.new_property(100)
+    width = rv.from_value(100)
 
-    height = rv.new_property(200)
+    height = rv.from_value(200)
 
     area = rv.combine(width, height)(rx.combine_latest).map(lambda v: v[0] * v[1])
 ```
