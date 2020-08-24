@@ -32,7 +32,7 @@ class ReactiveValue(Generic[T], ABC):
 
     def __init__(self, read_only=False) -> None:
         self._name: Optional[str] = None
-        self.read_only = read_only
+        self._read_only = read_only
 
         data: RequiresContext[Any, ReactiveValue.Data[T]] = RequiresContext(lambda obj: self._get_data(obj))
 
@@ -43,6 +43,10 @@ class ReactiveValue(Generic[T], ABC):
     @property
     def name(self) -> Optional[str]:
         return self._name
+
+    @property
+    def read_only(self) -> bool:
+        return self._read_only
 
     def observable(self, obj: Any) -> Observable:
         if obj is None:
