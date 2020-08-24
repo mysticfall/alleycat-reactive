@@ -3,7 +3,7 @@ from typing import Any, Callable
 
 from rx import operators as ops
 
-from alleycat.reactive import ReactiveObject, functions as rv
+from alleycat.reactive import ReactiveObject, functions as rv, RP, RV
 
 
 class ReactiveObjectTest(unittest.TestCase):
@@ -88,11 +88,12 @@ class ReactiveObjectTest(unittest.TestCase):
 
 
 class Fixture(ReactiveObject):
-    value = rv.from_value(0)
+    value: RP[int] = rv.from_value(0)
 
-    double = rv.new_view()
+    double: RV[int] = rv.new_view()
 
     def __init__(self):
+        # noinspection PyTypeChecker
         self.double = rv.observe(self.value).pipe(ops.map(lambda v: v * 2))
 
 

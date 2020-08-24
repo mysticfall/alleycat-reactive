@@ -85,28 +85,34 @@ property classes you can use for that purpose.
 
 Firstly, there is a type of property that can manage its state, which is implemented by 
 `ReactiveProperty[T]` class. To define such a property using an initial value, you can use 
-a helper function from_value as follows:
+a helper function `from_value` as follows:
 
 ```python
+from alleycat.reactive import RP
 from alleycat.reactive import functions as rv
 
 class Toto:
 
     # Create an instance of ReactiveProperty[int] with an initial value of '99':
-    value = rv.from_value(99) # You know the song, don't you? 
+    value: RP[int] = rv.from_value(99) # You know the song, don't you? 
 ```
 
-Sometimes, you need to determine the initial value by referencing another value supplied 
-as a constructor argument. In that case, you can lazily initialize the property by using 
-`new_property` as shown below:
+Note that `RP[T]` is just a convenient alias for `ReactiveProperty[T]` which you can use for 
+type hinting. As with other type annotations in Python, it is not strictly necessary. But it 
+can be particularly useful when you want to lazily initialize the property.
+ 
+You can declare an 'empty' property using `new_property` and initialize it later as shown 
+below. Because it may be difficult to see what type of data the property expects without an 
+initial value, using an explicit type annotation can make the code more readable:  
 
 ```python
+from alleycat.reactive import RP
 from alleycat.reactive import functions as rv
 
 class MyClass:
 
     # Declare an empty property first.
-    value = rv.new_property()
+    value: RP[int] = rv.new_property()
 
     def __init__(self, init_value: int):
 
@@ -114,18 +120,19 @@ class MyClass:
         self.value = init_value
 ```
 
-Whichever way you choose, it can be read and modified like an ordinary property. If you 
-want to make it a read-only property, you can set the `read_only` argument to `True` 
-as below:
+A `ReactiveProperty` can be can be read and modified like an ordinary class attribute. And 
+also you can make it a read-only property by setting the `read_only` argument to `True` like the 
+following example:
 
 ```python
+from alleycat.reactive import RP
 from alleycat.reactive import functions as rv
 
 class ArcadiaBay:
 
-    writeable = rv.from_value("life is strange")
+    writeable: RP[str] = rv.from_value("life is strange")
 
-    read_only = rv.from_value("the past", read_only=True)
+    read_only: RP[str] = rv.from_value("the past", read_only=True)
 
 
 place = ArcadiaBay()
@@ -149,11 +156,12 @@ To convert a reactive property into an _Observable_ of the same type, you can us
 method like this:
 
 ```python
+from alleycat.reactive import RP
 from alleycat.reactive import functions as rv
 
 class Nena:
 
-    ballons = rv.from_value(98)
+    ballons: RP[int] = rv.from_value(98)
 
 
 nena = Nena()
@@ -179,8 +187,9 @@ that, we better learn about the other variant of the reactive value first.
 
 ### Reactive View
 
-ReactiveView is another derivative of _ReactiveValue_, from which `ReactiveProperty` is 
-also derived (hence, the alias of `functions` module used above, _"rv"_).
+`ReactiveView[T]`(or `RV[T]` for short) is another derivative of `ReactiveValue`, from 
+which `ReactiveProperty` is also derived (hence, the alias of `functions` module used 
+above, _"rv"_).
 
 The main difference is that while the latter owns a state value itself, a reactive view 
 reflects it from an outside source specified as an _Observable_. To create a reactive 
@@ -188,11 +197,12 @@ view from an instance of _Observable_, you can use `from_observable` function li
 
 ```python
 import rx
+from alleycat.reactive import RV
 from alleycat.reactive import functions as rv
 
 class Joni:
 
-    big = rv.from_observable(rx.of("Yellow", "Taxi"))
+    big: RV[str] = rv.from_observable(rx.of("Yellow", "Taxi"))
 ```
 
 If you are familiar with Rx, you may see it as a wrapper around an _Observable_, while 
@@ -204,11 +214,12 @@ as shown below:
 
 ```python
 import rx
+from alleycat.reactive import RV
 from alleycat.reactive import functions as rv
 
 class BothSides:
 
-    love = rv.new_view()
+    love: RV[str] = rv.new_view()
 
     def __init__(self):
         self.love = rx.of("Moons", "Junes", "Ferris wheels")
@@ -228,29 +239,31 @@ so that it can be used to initialize an associated view.
 The code below shows how you can derive a view from an existing reactive property:
 
 ```python
+from alleycat.reactive import RP, RV
 from alleycat.reactive import functions as rv
 
 class Example:
 
-    value = rv.from_value("Boring!") # I know. But it's not easy to make it interesting, alright?  
+    value: RP[str] = rv.from_value("Boring!") # I know. But it's not easy to make it interesting, alright?  
 
-    view = value.as_view()
+    view: RV[str] = value.as_view()
 ```
 
-### Transformation
+### Operators
 
 As we know how to create reactive properties and values, now it's time to learn how to 
 transform them. Both variants of `ReactiveValue` provides `map` method, with which you 
 can map an arbitrary function or lambda expression over each value in the pipeline:
 
 ```python
+from alleycat.reactive import RP, RV
 from alleycat.reactive import functions as rv
 
 class Counter:
 
-    word = rv.new_property()  
+    word: RP[str] = rv.new_property()
 
-    count = word.as_view().map(len).map(lambda c: f"The word has {c} letter(s)")
+    count: RV[str] = word.as_view().map(len).map(lambda c: f"The word has {c} letter(s)")
 
 counter = Counter()
 
@@ -259,18 +272,18 @@ counter.word = "Supercalifragilisticexpialidocious!"
 print(counter.count) # Prints "The word has 35 letter(s)". Wait, did you actually count that?
 ```
 
-But what if you want to use other Rx operators, like `scan` or `merge`? In that case, 
-you can use `pipe` just like you would with an _Observable_ instance:
+You can also use `pipe` to chain arbitrary Rx operators to build a more complex pipeline like this: 
 
 ```python
 from rx import operators as ops
+from alleycat.reactive import RP, RV
 from alleycat.reactive import functions as rv
 
 class CrowsCounter:
 
-    animal = rv.new_property()
+    animal: RP[str] = rv.new_property()
 
-    crows = animal.as_view().pipe(
+    crows: RV[str] = animal.as_view().pipe(
         ops.map(str.lower),
         ops.filter(lambda v: v == "crow"),
         ops.map(lambda _: 1),
@@ -285,65 +298,21 @@ counting.animal = "dog"
 
 print(counting.crows) # Returns 2.
 ```
-On a side note, the aggregation performed by `crows` in the above example reports the 
-correct value even when there is no explicit subscription in the code. It is because 
-all properties and views in this library are published as 'hot' _Observables_ by default.
 
-It was a design decision to make aggregation more intuitive and less error-prone. You 
-don't have to understand such an implementation detail unless you come across a problem. 
-However, if you have a use case where it would be either necessary or significantly 
-efficient to make reactive values 'cold', please feel free to open a feature request.
-
-### Operators
-
-Sometimes, you may need to combine several properties of an object to derive another 
-of its attribute. For example, you can merge two or more reactive values to define a 
-new one which emits a value whenever one of its sources does, as follows:
+There are also convenient counterparts to `merge`, `combine_latest`, and `zip` from Rx API, 
+which you can use to combine two or more reactive values in a more concise manner:
 
 ```python
-from alleycat.reactive import functions as rv
-
-class Fixture:
-
-    cats = rv.new_property()
-
-    dogs = rv.new_property()
-
-    pets = rv.merge(cats, dogs)
-
-pets = []
-
-fixture = Fixture()
-
-rv.observe(fixture, "pets").subscribe(pets.append)
-
-fixture.cats = "Garfield"
-fixture.cats = "Grumpy"
-fixture.cats = "Cat who argues with a woman over a salad bowl"  # What was his name?
-
-fixture.dogs = "Pompidou"  # Sorry, I'm a cat person so I don't know too many canine celebrities.
-
-print(pets) # The array contains all of the names mentioned above.
-```
-
-Imagine you have a `Rectangle` class which declares its `width` and `height` as reactive 
-properties. It would be nice if you can somehow define its `area` property based upon 
-the rectangle's dimension in a declarative manner.
-
-However, merely merging `width` and `height` properties won't automatically calculate 
-the size of the shape. In this case, you can use `combine_latest` to calculate the size 
-with the latest values of `width` and `height`, whenever either of them is changed:
-
-```python
+from alleycat.reactive import RP, RV
 from alleycat.reactive import functions as rv
 
 class Rectangle:
 
-    width = rv.from_value(100)
+    width: RP[int] = rv.from_value(100)
 
-    height = rv.from_value(200)
+    height: RP[int] = rv.from_value(200)
 
-    area = rv.combine_latest(width, height)(lambda v: v[0] * v[1])
+    area: RV[int] = rv.combine_latest(width, height)(lambda v: v[0] * v[1])
 
 rectangle = Rectangle()
 
@@ -356,24 +325,6 @@ print(rectangle.area) # Prints 30,000.
 rectangle.height = 50
 
 print(rectangle.area) # Prints 750.
-```
-
-There's another operator called `zip` whose semantic matches that of the API with the 
-same name in Rx. In fact, you can use most of the operators Rx provides by applying them 
-over _Observables_ extracted by `combine` method. For instance, you can rewrite the 
-above example code  with `combine_latest` operator provided by Rx as follows:
-
-```python
-import rx
-from alleycat.reactive import functions as rv
-
-class Rectangle:
-
-    width = rv.from_value(100)
-
-    height = rv.from_value(200)
-
-    area = rv.combine(width, height)(rx.combine_latest).map(lambda v: v[0] * v[1])
 ```
 
 ## Install

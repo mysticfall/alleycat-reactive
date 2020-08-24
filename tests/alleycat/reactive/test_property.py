@@ -4,7 +4,7 @@ from typing import TypeVar, Callable, Any
 from returns.maybe import Some
 from rx import operators as ops
 
-from alleycat.reactive import ReactiveProperty, functions as rv, ReactiveView
+from alleycat.reactive import ReactiveProperty, functions as rv, ReactiveView, RP, RV
 
 T = TypeVar("T")
 
@@ -21,19 +21,19 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_name_inference(self):
         class Fixture:
-            value = ReactiveProperty(Some("test"))
+            value: RP[str] = ReactiveProperty(Some("test"))
 
         self.assertEqual(Fixture.value.name, "value")
 
     def test_read_value(self):
         class Fixture:
-            value = ReactiveProperty(Some("test"))
+            value: RP[str] = ReactiveProperty(Some("test"))
 
         self.assertEqual("test", Fixture().value)
 
     def test_write_value(self):
         class Fixture:
-            value = ReactiveProperty(Some("ABC"))
+            value: RP[str] = ReactiveProperty(Some("ABC"))
 
         fixture = Fixture()
         fixture.value = "123"
@@ -42,7 +42,7 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_read_only(self):
         class Fixture:
-            value = ReactiveProperty(Some("Waltzing"), read_only=True)
+            value: RP[str] = ReactiveProperty(Some("Waltzing"), read_only=True)
 
         with self.assertRaises(AttributeError) as cm:
             Fixture().value = "Matilda"
@@ -51,9 +51,10 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_lazy_read_only(self):
         class Fixture:
-            value = ReactiveProperty(read_only=True)
+            value: RP[str] = ReactiveProperty(read_only=True)
 
             def __init__(self):
+                # noinspection PyTypeChecker
                 self.value = "Lazy"
 
         fixture = Fixture()
@@ -67,7 +68,7 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_lazy_init(self):
         class Fixture:
-            value = ReactiveProperty()
+            value: RP[str] = ReactiveProperty()
 
         fixture = Fixture()
 
@@ -83,7 +84,7 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_observe(self):
         class Fixture:
-            value = ReactiveProperty(Some("Do, Re, Mi"))
+            value: RP[str] = ReactiveProperty(Some("Do, Re, Mi"))
 
         fixture = Fixture()
 
@@ -102,7 +103,7 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_lazy_observe(self):
         class Fixture:
-            value = ReactiveProperty()
+            value: RP[str] = ReactiveProperty()
 
         fixture = Fixture()
 
@@ -120,8 +121,8 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_multiple_properties(self):
         class Fixture:
-            name = ReactiveProperty(Some("Slim Shady"))
-            age = ReactiveProperty(Some(26))
+            name: RP[str] = ReactiveProperty(Some("Slim Shady"))
+            age: RP[int] = ReactiveProperty(Some(26))
 
         fixture = Fixture()
 
@@ -136,7 +137,7 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_access_after_dispose(self):
         class Fixture:
-            value = ReactiveProperty(Some(1))
+            value: RP[int] = ReactiveProperty(Some(1))
 
         fixture = Fixture()
 
@@ -164,7 +165,7 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_class_attribute(self):
         class Fixture:
-            value = rv.from_value(True)
+            value: RP[bool] = rv.from_value(True)
 
         prop = Fixture.value
 
@@ -173,7 +174,7 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_instance_identity(self):
         class Fixture:
-            value = rv.from_value(1)
+            value: RP[int] = rv.from_value(1)
 
         fixture = Fixture()
         fixture.value = 2
@@ -186,9 +187,9 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_map(self):
         class Fixture:
-            name = ReactiveProperty(Some("wolf"))
+            name: RP[str] = ReactiveProperty(Some("wolf"))
 
-            song = name.map(lambda n: f"Who's afraid of a big bad {n}?")
+            song: RP[str] = name.map(lambda n: f"Who's afraid of a big bad {n}?")
 
         fixture = Fixture()
 
@@ -204,9 +205,9 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_pipe(self):
         class Fixture:
-            name = ReactiveProperty(Some("wolf"))
+            name: RP[str] = ReactiveProperty(Some("wolf"))
 
-            song = name.pipe(ops.map(lambda n: f"Who's afraid of a big bad {n}?"), ops.map(str.upper))
+            song: RP[str] = name.pipe(ops.map(lambda n: f"Who's afraid of a big bad {n}?"), ops.map(str.upper))
 
         fixture = Fixture()
 
@@ -228,9 +229,9 @@ class ReactivePropertyTest(unittest.TestCase):
             return number
 
         class Fixture:
-            value = ReactiveProperty(Some(1)).premap(lambda v: v * 2)
+            value: RP[int] = ReactiveProperty(Some(1)).premap(lambda v: v * 2)
 
-            positive_only = value.premap(validate)
+            positive_only: RP[int] = value.premap(validate)
 
         fixture = Fixture()
 
@@ -252,9 +253,9 @@ class ReactivePropertyTest(unittest.TestCase):
 
     def test_as_view(self):
         class Fixture:
-            name = ReactiveProperty(Some("Virginia O'Brien"))
+            name: RP[str] = ReactiveProperty(Some("Virginia O'Brien"))
 
-            star = name.as_view()
+            star: RV[str] = name.as_view()
 
         self.assertEqual(ReactiveView, type(Fixture.star))
 

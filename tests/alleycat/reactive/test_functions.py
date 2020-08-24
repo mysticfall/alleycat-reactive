@@ -6,16 +6,16 @@ from returns.functions import identity
 from rx import operators as ops
 from rx.subject import BehaviorSubject
 
-from alleycat.reactive import ReactiveObject, functions as rv
+from alleycat.reactive import ReactiveObject, functions as rv, RP, RV
 
 
 # noinspection DuplicatedCode
 class FunctionsTest(unittest.TestCase):
     def test_from_value(self):
         class Fixture(ReactiveObject):
-            mary = rv.from_value(100, read_only=True)
+            mary: RP[int] = rv.from_value(100, read_only=True)
 
-            poppins = rv.from_value("Supercalifragilisticexpialidocious")
+            poppins: RP[str] = rv.from_value("Supercalifragilisticexpialidocious")
 
         fixture = Fixture()
 
@@ -36,11 +36,12 @@ class FunctionsTest(unittest.TestCase):
         songs = BehaviorSubject("Supercalifragilisticexpialidocious")
 
         class Fixture(ReactiveObject):
-            mary = rv.from_observable(rx.of(100), read_only=True)
+            mary: RV[int] = rv.from_observable(rx.of(100), read_only=True)
 
-            poppins = rv.new_view()
+            poppins: RV[str] = rv.new_view()
 
             def __init__(self):
+                # noinspection PyTypeChecker
                 self.poppins = songs
 
         fixture = Fixture()
@@ -60,7 +61,7 @@ class FunctionsTest(unittest.TestCase):
 
     def test_observe(self):
         class MaryPoppins(ReactiveObject):
-            song = rv.from_value("Supercalifragilisticexpialidocious")
+            song: RP[str] = rv.from_value("Supercalifragilisticexpialidocious")
 
             info = song.as_view().pipe(
                 ops.scan(lambda total, _: total + 1, 0),
@@ -107,7 +108,7 @@ class FunctionsTest(unittest.TestCase):
 
     def test_observe_uninitialized(self):
         class Fixture:
-            value = rv.new_property()
+            value: RP[int] = rv.new_property()
 
         values = []
 
@@ -122,11 +123,11 @@ class FunctionsTest(unittest.TestCase):
 
     def test_combine(self):
         class Fixture:
-            value = rv.from_value(1)
+            value: RP[int] = rv.from_value(1)
 
-            doubled = value.as_view().map(lambda v: v * 2)
+            doubled: RV[int] = value.as_view().map(lambda v: v * 2)
 
-            combined = rv.combine(value, doubled)(rx.combine_latest)
+            combined: RV[int] = rv.combine(value, doubled)(rx.combine_latest)
 
         combined = []
 
@@ -142,11 +143,11 @@ class FunctionsTest(unittest.TestCase):
 
     def test_combine_latest(self):
         class Fixture:
-            value = rv.from_value(1)
+            value: RP[int] = rv.from_value(1)
 
-            doubled = value.as_view().map(lambda v: v * 2)
+            doubled: RV[int] = value.as_view().map(lambda v: v * 2)
 
-            combined = rv.combine_latest(value, doubled)(identity)
+            combined: RV[int] = rv.combine_latest(value, doubled)(identity)
 
         combined = []
 
@@ -162,11 +163,11 @@ class FunctionsTest(unittest.TestCase):
 
     def test_merge(self):
         class Fixture:
-            cats = rv.new_property()
+            cats: RP[str] = rv.new_property()
 
-            dogs = rv.new_property()
+            dogs: RP[str] = rv.new_property()
 
-            pets = rv.merge(cats, dogs)
+            pets: RP[str] = rv.merge(cats, dogs)
 
         pets = []
 
@@ -184,11 +185,11 @@ class FunctionsTest(unittest.TestCase):
 
     def test_zip(self):
         class Fixture:
-            value = rv.from_value(1)
+            value: RP[int] = rv.from_value(1)
 
-            doubled = value.as_view().map(lambda v: v * 2)
+            doubled: RV[int] = value.as_view().map(lambda v: v * 2)
 
-            zipped = rv.zip(value, doubled)(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))
+            zipped: RV[int] = rv.zip(value, doubled)(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))
 
         zipped = []
 

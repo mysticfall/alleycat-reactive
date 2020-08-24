@@ -5,16 +5,16 @@ import rx
 from returns.functions import identity
 from rx import operators as ops
 
-from alleycat.reactive import functions as rv
+from alleycat.reactive import functions as rv, RP, RV
 
 
 class ReactiveValueTest(unittest.TestCase):
 
     def test_eager_init(self):
         class CrowsCounter:
-            animal = rv.new_property()
+            animal: RP[str] = rv.new_property()
 
-            crows = animal.as_view().pipe(
+            crows: RV[int] = animal.as_view().pipe(
                 ops.map(str.lower),
                 ops.filter(lambda v: v == "crow"),
                 ops.map(lambda _: 1),
@@ -42,11 +42,11 @@ class ReactiveValueTest(unittest.TestCase):
 
     def test_name_inference(self):
         class Fixture:
-            shallow = rv.new_property(1)
+            shallow: RP[int] = rv.new_property(1)
 
-            passed = rv.new_property(1).map(lambda v: v + 1).map(lambda v: v + 1).as_view()
+            passed: RV[int] = rv.new_property(1).map(lambda v: v + 1).map(lambda v: v + 1).as_view()
 
-            deep = rv.combine_latest(shallow, passed)(ops.map(identity)).map(identity)
+            deep: RV[int] = rv.combine_latest(shallow, passed)(ops.map(identity)).map(identity)
 
         self.assertEqual("shallow", Fixture.shallow.name)
         self.assertEqual("passed", Fixture.passed.name)
@@ -54,9 +54,9 @@ class ReactiveValueTest(unittest.TestCase):
 
     def test_emitting_order(self):
         class Fixture:
-            value = rv.from_value(1)
+            value: RP[int] = rv.from_value(1)
 
-            doubled = value.as_view().map(lambda v: v * 2)
+            doubled: RV[int] = value.as_view().map(lambda v: v * 2)
 
         values = []
 
@@ -73,17 +73,17 @@ class ReactiveValueTest(unittest.TestCase):
 
     def test_extending_attributes(self):
         class GrandParent:
-            inherited = rv.from_value("A")
+            inherited: RP[str] = rv.from_value("A")
 
-            extended = rv.from_value(1)
+            extended: RP[int] = rv.from_value(1)
 
-            from_init = rv.from_value(1)
+            from_init: RP[int] = rv.from_value(1)
 
         class Parent(GrandParent):
-            extended = GrandParent.extended.map(lambda v: v * 2)
+            extended: RP[int] = GrandParent.extended.map(lambda v: v * 2)
 
         class Child(Parent):
-            extended = Parent.extended.map(lambda v: v * 3)
+            extended: RP[int] = Parent.extended.map(lambda v: v * 3)
 
         fixture = Child()
 
@@ -96,23 +96,23 @@ class ReactiveValueTest(unittest.TestCase):
 
     def test_init_hook(self):
         class Bangles:
-            song = rv.new_property()
+            song: RP[str] = rv.new_property()
 
-            hits = song.as_view().pipe(ops.map(lambda _: 1), ops.scan(lambda v1, v2: v1 + v2, 0))
+            hits: RV[str] = song.as_view().pipe(ops.map(lambda _: 1), ops.scan(lambda v1, v2: v1 + v2, 0))
 
             def __init__(self, hit, *years_active, **members):
                 self.hit = hit
                 self.years_active = years_active
                 self.members = members
 
-        members = {
+        the_bangles = {
             "vocal": "Susanna Hoffs",
             "drums": "Debbi Peterson",
             "bass": "Michael Steele",
             "guitar": "Vicki Peterson"
         }
 
-        bangles = Bangles("Walk Like an Egyptian", "1981–1989", "1998–present", **members)
+        bangles = Bangles("Walk Like an Egyptian", "1981–1989", "1998–present", **the_bangles)
 
         bangles.song = "If She Knew What She Wants"
         bangles.song = "Manic Monday"
@@ -130,9 +130,9 @@ class ReactiveValueTest(unittest.TestCase):
         calls = []
 
         class Fixture:
-            steeleye = rv.from_observable(rx.interval(1))
+            steeleye: RV[int] = rv.from_observable(rx.interval(1))
 
-            span = steeleye.map(lambda _: "All around my hat")
+            span: RV[str] = steeleye.map(lambda _: "All around my hat")
 
             def __init__(self, values, invokes):
                 self.invokes = invokes

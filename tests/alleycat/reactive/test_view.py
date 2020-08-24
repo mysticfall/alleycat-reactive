@@ -6,7 +6,7 @@ from returns.context import RequiresContext
 from rx import operators as ops
 from rx.subject import BehaviorSubject
 
-from alleycat.reactive import ReactiveView, functions as rv
+from alleycat.reactive import ReactiveView, functions as rv, RV
 
 
 # noinspection DuplicatedCode
@@ -21,7 +21,7 @@ class ReactiveViewTest(unittest.TestCase):
 
     def test_name_inference(self):
         class Fixture:
-            value = ReactiveView(RequiresContext.from_value(rx.of(1, 2, 3)))
+            value: RV[int] = ReactiveView(RequiresContext.from_value(rx.of(1, 2, 3)))
 
         self.assertEqual(Fixture.value.name, "value")
 
@@ -29,7 +29,7 @@ class ReactiveViewTest(unittest.TestCase):
         subject = BehaviorSubject(1)
 
         class Fixture:
-            value = ReactiveView(RequiresContext.from_value(subject))
+            value: RV[int] = ReactiveView(RequiresContext.from_value(subject))
 
         self.assertEqual(1, Fixture().value)
 
@@ -43,7 +43,7 @@ class ReactiveViewTest(unittest.TestCase):
 
     def test_write_value(self):
         class Fixture:
-            value = ReactiveView(RequiresContext.from_value(rx.of(1)), read_only=False)
+            value: RV[int] = ReactiveView(RequiresContext.from_value(rx.of(1)), read_only=False)
 
         fixture = Fixture()
         fixture.value = rx.of(2, 3)
@@ -52,7 +52,7 @@ class ReactiveViewTest(unittest.TestCase):
 
     def test_read_only(self):
         class Fixture:
-            value = ReactiveView(RequiresContext.from_value(rx.of(1)), read_only=True)
+            value: RV[int] = ReactiveView(RequiresContext.from_value(rx.of(1)), read_only=True)
 
         with self.assertRaises(AttributeError) as cm:
             Fixture().value = rx.of(2, 3)
@@ -63,7 +63,7 @@ class ReactiveViewTest(unittest.TestCase):
         subject = BehaviorSubject("Do, Re, Mi")
 
         class Fixture:
-            value = ReactiveView(RequiresContext.from_value(subject))
+            value: RV[str] = ReactiveView(RequiresContext.from_value(subject))
 
         fixture = Fixture()
 
@@ -85,10 +85,11 @@ class ReactiveViewTest(unittest.TestCase):
         age_subject = BehaviorSubject(26)
 
         class Fixture:
-            name = ReactiveView(RequiresContext.from_value(name_subject))
-            age = ReactiveView(RequiresContext.from_value(rx.empty()))
+            name: RV[str] = ReactiveView(RequiresContext.from_value(name_subject))
+            age: RV[int] = ReactiveView(RequiresContext.from_value(rx.empty()))
 
             def __init__(self):
+                # noinspection PyTypeChecker
                 self.age = age_subject
 
         fixture = Fixture()
@@ -104,7 +105,7 @@ class ReactiveViewTest(unittest.TestCase):
 
     def test_access_after_dispose(self):
         class Fixture:
-            value = ReactiveView(RequiresContext.from_value(rx.of(1)), read_only=False)
+            value: RV[int] = ReactiveView(RequiresContext.from_value(rx.of(1)), read_only=False)
 
         fixture = Fixture()
 
@@ -132,7 +133,7 @@ class ReactiveViewTest(unittest.TestCase):
 
     def test_class_attribute(self):
         class Fixture:
-            value = rv.from_observable(rx.empty())
+            value: RV[int] = rv.from_observable(rx.empty())
 
         prop = Fixture.value
 
@@ -143,9 +144,9 @@ class ReactiveViewTest(unittest.TestCase):
         source = BehaviorSubject("wolf")
 
         class Fixture:
-            name = ReactiveView(RequiresContext.from_value(source), read_only=False)
+            name: RV[str] = ReactiveView(RequiresContext.from_value(source), read_only=False)
 
-            song = name.map(lambda n: f"Who's afraid of a big bad {n}?")
+            song: RV[str] = name.map(lambda n: f"Who's afraid of a big bad {n}?")
 
         fixture = Fixture()
 
@@ -160,9 +161,9 @@ class ReactiveViewTest(unittest.TestCase):
         source = BehaviorSubject("wolf")
 
         class Fixture:
-            name = ReactiveView(RequiresContext.from_value(source), read_only=False)
+            name: RV[str] = ReactiveView(RequiresContext.from_value(source), read_only=False)
 
-            song = name.pipe(ops.map(lambda n: f"Who's afraid of a big bad {n}?"))
+            song: RV[str] = name.pipe(ops.map(lambda n: f"Who's afraid of a big bad {n}?"))
 
         fixture = Fixture()
 
@@ -177,14 +178,14 @@ class ReactiveViewTest(unittest.TestCase):
         counter = BehaviorSubject(1)
 
         class Fixture:
-            value = ReactiveView(RequiresContext.from_value(counter))
+            value: RV[int] = ReactiveView(RequiresContext.from_value(counter))
 
-            doubled = ReactiveView(value.context.map(lambda c: c.pipe(ops.map(lambda v: v * 2))))
+            doubled: RV[int] = ReactiveView(value.context.map(lambda c: c.pipe(ops.map(lambda v: v * 2))))
 
-            result = ReactiveView(RequiresContext
-                                  .from_iterable([v.context for v in [value, doubled]])
-                                  .map(lambda v: rx.combine_latest(*v))
-                                  .map(lambda o: o.pipe(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))))
+            result: RV[int] = ReactiveView(RequiresContext
+                                           .from_iterable([v.context for v in [value, doubled]])
+                                           .map(lambda v: rx.combine_latest(*v))
+                                           .map(lambda o: o.pipe(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))))
 
         fixture = Fixture()
 
