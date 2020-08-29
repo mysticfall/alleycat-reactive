@@ -110,16 +110,21 @@ class FunctionsTest(unittest.TestCase):
         class Fixture:
             value: RP[int] = rv.new_property()
 
-        values = []
+            view: RP[int] = value.as_view()
+
+        values1 = []
+        values2 = []
 
         fixture = Fixture()
 
-        rv.observe(fixture.value).subscribe(values.append)
+        rv.observe(fixture.value).subscribe(values1.append)
+        rv.observe(fixture.view).subscribe(values2.append)
 
         fixture.value = 1
         fixture.value = 2
 
-        self.assertEqual([1, 2], values)
+        self.assertEqual([1, 2], values1)
+        self.assertEqual([1, 2], values2)
 
     def test_combine(self):
         class Fixture:

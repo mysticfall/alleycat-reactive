@@ -173,7 +173,10 @@ class ReactiveValue(Generic[T], ABC):
             if not self.initialized:
                 # FIXME: This is a bad design but also something unavoidable if we want to call 'observe' on
                 #  an uninitialized value.
-                observed = utils.get_current_frame(7).map(utils.is_invoked_from_observe).value_or(False)
+                def observed_from_frame(depth: int) -> bool:
+                    return utils.get_current_frame(depth).map(utils.is_invoked_from_observe).value_or(False)
+
+                observed = observed_from_frame(7) or observed_from_frame(8)
 
                 if observed:
                     return None  # type:ignore
