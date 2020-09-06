@@ -11,6 +11,9 @@ T = TypeVar("T")
 class ReactiveObject(Disposable):
     disposed = rv.from_value(False)
 
+    def __init__(self):
+        super().__init__()
+
     def observe(self, name: str) -> Observable:
         if self.disposed:
             raise RuntimeError("Cannot observe a disposed object.")
