@@ -24,9 +24,6 @@ META_KEY_PREFIX = "_rv_meta_"
 
 
 class ReactiveValue(Generic[T], ABC):
-    context: RequiresContext[Observable, Any]
-
-    value_context: RequiresContext[T, Any]
 
     __slots__ = ()
 
@@ -37,8 +34,8 @@ class ReactiveValue(Generic[T], ABC):
         data: RequiresContext[Any, ReactiveValue.Data[T]] = RequiresContext(lambda obj: self._get_data(obj))
 
         # Declare separately to prevent an object allocation with every value/observable reference.
-        self.context = data.map(lambda c: c.observable)
-        self.value_context = data.map(lambda c: c.value)
+        self._context = data.map(lambda c: c.observable)
+        self._value_context = data.map(lambda c: c.value)
 
     @property
     def name(self) -> Optional[str]:
@@ -47,6 +44,14 @@ class ReactiveValue(Generic[T], ABC):
     @property
     def read_only(self) -> bool:
         return self._read_only
+
+    @property
+    def context(self) -> RequiresContext[Observable, Any]:
+        return self._context
+
+    @property
+    def value_context(self) -> RequiresContext[T, Any]:
+        return self._value_context
 
     def observable(self, obj: Any) -> Observable:
         if obj is None:

@@ -25,9 +25,21 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
 
         super().__init__(read_only)
 
-        self.init_value = init_value
-        self.pre_modifier = pre_modifier
-        self.post_modifier = post_modifier
+        self._init_value = init_value
+        self._pre_modifier = pre_modifier
+        self._post_modifier = post_modifier
+
+    @property
+    def init_value(self) -> Maybe[T]:
+        return self._init_value
+
+    @property
+    def pre_modifier(self) -> Callable[[T], T]:
+        return self._pre_modifier
+
+    @property
+    def post_modifier(self) -> Callable[[Observable], Observable]:
+        return self._post_modifier
 
     def as_view(self) -> ReactiveView[T]:
         return ReactiveView(self.context, self.read_only)
