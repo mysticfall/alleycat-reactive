@@ -229,9 +229,9 @@ class ReactivePropertyTest(unittest.TestCase):
             return number
 
         class Fixture:
-            value: RP[int] = ReactiveProperty(Some(1)).premap(lambda v: v * 2)
+            value: RP[int] = ReactiveProperty(Some(1)).validate(lambda v: v * 2)
 
-            positive_only: RP[int] = value.premap(validate)
+            positive_only: RP[int] = value.validate(validate)
 
         fixture = Fixture()
 

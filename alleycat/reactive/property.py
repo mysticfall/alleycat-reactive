@@ -20,42 +20,40 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             self,
             init_value: Maybe[T] = Nothing,
             read_only=False,
-            pre_modifier: Callable[[T], T] = identity,
-            post_modifier: Callable[[Observable], Observable] = identity) -> None:
+            modifier: Callable[[Observable], Observable] = identity,
+            validator: Callable[[T], T] = identity) -> None:
 
         super().__init__(read_only)
 
         self._init_value = init_value
-        self._pre_modifier = pre_modifier
-        self._post_modifier = post_modifier
+        self._validator = validator
+        self._modifier = modifier
 
     @property
     def init_value(self) -> Maybe[T]:
         return self._init_value
 
     @property
-    def pre_modifier(self) -> Callable[[T], T]:
-        return self._pre_modifier
+    def validator(self) -> Callable[[T], T]:
+        return self._validator
 
     @property
-    def post_modifier(self) -> Callable[[Observable], Observable]:
-        return self._post_modifier
+    def modifier(self) -> Callable[[Observable], Observable]:
+        return self._modifier
 
     def as_view(self) -> ReactiveView[T]:
         return ReactiveView(self.context, self.read_only)
 
     def pipe(self, *modifiers: Callable[[Observable], Observable]) -> ReactiveProperty:
-        stack = [self.post_modifier] + list(modifiers)
+        stack = [self.modifier] + list(modifiers)
 
-        return ReactiveProperty(
-            self.init_value, self.read_only, self.pre_modifier, pipe_(*stack))  # type:ignore
+        return ReactiveProperty(self.init_value, self.read_only, pipe_(*stack), self.validator)  # type:ignore
 
-    def premap(self, modifier: Callable[[T], T]) -> ReactiveProperty[T]:
-        if modifier is None:
+    def validate(self, validator: Callable[[T], T]) -> ReactiveProperty[T]:
+        if validator is None:
             raise ValueError("Argument 'modifier' is required.")
 
-        return ReactiveProperty(
-            self.init_value, self.read_only, compose(self.pre_modifier, modifier), self.post_modifier)
+        return ReactiveProperty(self.init_value, self.read_only, self.modifier, compose(self.validator, validator))
 
     class PropertyData(ReactiveValue.Data[T]):
 
@@ -63,28 +61,27 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
                 self,
                 name: str,
                 init_value: Maybe[T],
-                pre_modifier: Callable[[T], T],
-                post_modifier: Callable[[Observable], Observable]):
+                modifier: Callable[[Observable], Observable],
+                validator: Callable[[T], T]):
 
             assert name is not None
             assert init_value is not None
-            assert post_modifier is not None
-            assert pre_modifier is not None
+            assert modifier is not None
+            assert validator is not None
 
-            self.modifier = pre_modifier
-
+            self._validator = validator
             self._property: Optional[BehaviorSubject] = None
 
             obs: Observable
 
             if init_value != Nothing:
-                self._property = BehaviorSubject(init_value.map(pre_modifier).unwrap())
+                self._property = BehaviorSubject(init_value.map(validator).unwrap())
 
                 obs = self._property
             else:
                 obs = rx.empty()
 
-            super().__init__(name, obs, post_modifier)
+            super().__init__(name, obs, modifier)
 
         # Must override to appease Mypy... I hate Python.
         @property
@@ -98,11 +95,15 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             if self.initialized:
                 assert self._property is not None
 
-                self._property.on_next(self.modifier(value))
+                self._property.on_next(self.validator(value))
             else:
-                self._property = BehaviorSubject(self.modifier(value))
+                self._property = BehaviorSubject(self.validator(value))
 
                 self.observable = self._property
+
+        @property
+        def validator(self) -> Callable[[T], T]:
+            return self._validator
 
         def dispose(self) -> None:
             assert self._property is not None
@@ -116,7 +117,7 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
         assert obj is not None
         assert self.name is not None
 
-        return self.PropertyData(self.name, self.init_value, self.pre_modifier, self.post_modifier)
+        return self.PropertyData(self.name, self.init_value, self.modifier, self.validator)
 
     def _get_data(self, obj: Any) -> PropertyData:
         assert obj is not None
