@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TypeVar, Generic, Callable, Optional, Any, cast
 
 import rx
-from returns.functions import identity, compose
+from returns.functions import identity
 from returns.maybe import Maybe, Nothing
 from returns.pipeline import pipe as pipe_
 from rx import Observable
@@ -21,20 +21,20 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             init_value: Maybe[T] = Nothing,
             read_only=False,
             modifier: Callable[[Observable], Observable] = identity,
-            validator: Callable[[T], T] = identity) -> None:
+            validator: Callable[[T, Any], T] = lambda v, _: v) -> None:
 
         super().__init__(read_only)
 
         self._init_value = init_value
-        self._validator = validator
         self._modifier = modifier
+        self._validator = validator
 
     @property
     def init_value(self) -> Maybe[T]:
         return self._init_value
 
     @property
-    def validator(self) -> Callable[[T], T]:
+    def validator(self) -> Callable[[T, Any], T]:
         return self._validator
 
     @property
@@ -49,11 +49,14 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
 
         return ReactiveProperty(self.init_value, self.read_only, pipe_(*stack), self.validator)  # type:ignore
 
-    def validate(self, validator: Callable[[T], T]) -> ReactiveProperty[T]:
+    def validate(self, validator: Callable[[T, Any], T]) -> ReactiveProperty[T]:
         if validator is None:
             raise ValueError("Argument 'modifier' is required.")
 
-        return ReactiveProperty(self.init_value, self.read_only, self.modifier, compose(self.validator, validator))
+        def validate(v: T, obj: Any) -> T:
+            return validator(self.validator(v, obj), obj)
+
+        return ReactiveProperty(self.init_value, self.read_only, self.modifier, validate)
 
     class PropertyData(ReactiveValue.Data[T]):
 
@@ -117,7 +120,10 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
         assert obj is not None
         assert self.name is not None
 
-        return self.PropertyData(self.name, self.init_value, self.modifier, self.validator)
+        def validate(v: T) -> T:
+            return self.validator(v, obj)
+
+        return self.PropertyData(self.name, self.init_value, self.modifier, validate)
 
     def _get_data(self, obj: Any) -> PropertyData:
         assert obj is not None
