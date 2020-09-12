@@ -24,9 +24,9 @@ META_KEY_PREFIX = "_rv_meta_"
 
 
 class ReactiveValue(Generic[T], ABC):
-    context: RequiresContext[Any, Observable]
+    context: RequiresContext[Observable, Any]
 
-    value_context: RequiresContext[Any, T]
+    value_context: RequiresContext[T, Any]
 
     __slots__ = ()
 
