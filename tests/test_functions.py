@@ -91,7 +91,7 @@ class FunctionsTest(unittest.TestCase):
 
         poppins.song = "A Spoonful of Sugar"
 
-        self.assertEqual(["Supercalifragilisticexpialidocious", "Feed the Birds"], songs)
+        self.assertEqual([], songs[2:])
         self.assertEqual("Mary has sung 2 song(s).", info)
 
         # This time, subscribe using the name.
@@ -100,11 +100,7 @@ class FunctionsTest(unittest.TestCase):
 
         poppins.song = "Chim Chim Cheree"
 
-        self.assertEqual([
-            "Supercalifragilisticexpialidocious",
-            "Feed the Birds",
-            "A Spoonful of Sugar",
-            "Chim Chim Cheree"], songs)
+        self.assertEqual(["A Spoonful of Sugar", "Chim Chim Cheree"], songs[2:])
 
         self.assertEqual("Mary has sung 4 song(s).", info)
 
@@ -146,7 +142,7 @@ class FunctionsTest(unittest.TestCase):
 
         fixture.value = 3
 
-        self.assertEqual([(1, 2), (1, 6), (3, 6)], combined)
+        self.assertEqual([(1, 6), (3, 6)], combined[1:])
 
     def test_combine_latest(self):
         class Fixture:
@@ -166,7 +162,7 @@ class FunctionsTest(unittest.TestCase):
 
         fixture.value = 3
 
-        self.assertEqual([(1, 2), (1, 6), (3, 6)], combined)
+        self.assertEqual([(1, 6), (3, 6)], combined[1:])
 
     def test_merge(self):
         class Fixture:
@@ -183,12 +179,16 @@ class FunctionsTest(unittest.TestCase):
         rv.observe(fixture, "pets").subscribe(pets.append)
 
         fixture.cats = "Garfield"
+        self.assertEqual(["Garfield"], pets)
+
         fixture.cats = "Grumpy"
+        self.assertEqual(["Grumpy"], pets[1:])
+
         fixture.cats = "Cat who argues with a woman over a salad bowl"  # What was his name?
+        self.assertEqual(["Cat who argues with a woman over a salad bowl"], pets[2:])
 
         fixture.dogs = "Pompidou"  # Sorry, I'm a cat person so I don't know too many canine celebrities.
-
-        self.assertEqual(["Garfield", "Grumpy", "Cat who argues with a woman over a salad bowl", "Pompidou"], pets)
+        self.assertEqual(["Pompidou"], pets[3:])
 
     def test_zip(self):
         class Fixture:
@@ -210,7 +210,7 @@ class FunctionsTest(unittest.TestCase):
         fixture.value = 3
 
         self.assertEqual("3 * 2 = 6", fixture.zipped)
-        self.assertEqual(["1 * 2 = 2", "3 * 2 = 6"], zipped)
+        self.assertEqual(["3 * 2 = 6"], zipped[1:])
 
 
 if __name__ == '__main__':

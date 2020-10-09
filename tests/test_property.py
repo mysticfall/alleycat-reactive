@@ -276,7 +276,7 @@ class ReactivePropertyTest(unittest.TestCase):
         fixture.name = "Judy Garland"
 
         self.assertEqual("Judy Garland", fixture.star)
-        self.assertEqual(["Virginia O'Brien", "Judy Garland"], stars)
+        self.assertEqual(["Judy Garland"], stars[1:])
 
 
 if __name__ == '__main__':
