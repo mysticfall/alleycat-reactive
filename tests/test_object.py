@@ -37,16 +37,23 @@ class ReactiveObjectTest(unittest.TestCase):
 
     def test_dispose_event(self):
         disposed = False
+        event_fired = False
 
         def value_changed(value):
             nonlocal disposed
             disposed = value
 
+        def event_received():
+            nonlocal event_fired
+            event_fired = True
+
         rv.observe(self.fixture.disposed).subscribe(value_changed)
 
+        self.fixture.on_dispose.subscribe(lambda _: event_received())
         self.fixture.dispose()
 
         self.assertEqual(True, disposed)
+        self.assertEqual(True, event_fired)
 
     def test_complete_before_dispose(self):
         completed = {"value": False, "double": False}
