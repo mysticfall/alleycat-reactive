@@ -93,6 +93,8 @@ class Fixture(ReactiveObject):
     double: RV[int] = rv.new_view()
 
     def __init__(self):
+        super().__init__()
+
         # noinspection PyTypeChecker
         self.double = rv.observe(self.value).pipe(ops.map(lambda v: v * 2))
 

@@ -41,6 +41,8 @@ class FunctionsTest(unittest.TestCase):
             poppins: RV[str] = rv.new_view()
 
             def __init__(self):
+                super().__init__()
+
                 # noinspection PyTypeChecker
                 self.poppins = songs
 
