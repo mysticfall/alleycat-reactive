@@ -14,11 +14,11 @@ class ReactiveValueTest(unittest.TestCase):
         class CrowsCounter:
             animal: RP[str] = rv.new_property()
 
-            crows: RV[int] = animal.as_view().pipe(
+            crows: RV[int] = animal.as_view().pipe(lambda _: (
                 ops.map(str.lower),
                 ops.filter(lambda v: v == "crow"),
                 ops.map(lambda _: 1),
-                ops.scan(lambda v1, v2: v1 + v2, 0))
+                ops.scan(lambda v1, v2: v1 + v2, 0)))
 
         counting = CrowsCounter()
 
@@ -44,9 +44,9 @@ class ReactiveValueTest(unittest.TestCase):
         class Fixture:
             shallow: RP[int] = rv.new_property(1)
 
-            passed: RV[int] = rv.new_property(1).map(lambda v: v + 1).map(lambda v: v + 1).as_view()
+            passed: RV[int] = rv.new_property(1).map(lambda _, v: v + 1).map(lambda _, v: v + 1).as_view()
 
-            deep: RV[int] = rv.combine_latest(shallow, passed)(ops.map(identity)).map(identity)
+            deep: RV[int] = rv.combine_latest(shallow, passed)(ops.map(identity)).map(lambda _: identity)
 
         self.assertEqual("shallow", Fixture.shallow.name)
         self.assertEqual("passed", Fixture.passed.name)
@@ -56,7 +56,7 @@ class ReactiveValueTest(unittest.TestCase):
         class Fixture:
             value: RP[int] = rv.from_value(1)
 
-            doubled: RV[int] = value.as_view().map(lambda v: v * 2)
+            doubled: RV[int] = value.as_view().map(lambda _, v: v * 2)
 
         values = []
 
@@ -80,10 +80,10 @@ class ReactiveValueTest(unittest.TestCase):
             from_init: RP[int] = rv.from_value(1)
 
         class Parent(GrandParent):
-            extended: RP[int] = GrandParent.extended.map(lambda v: v * 2)
+            extended: RP[int] = GrandParent.extended.map(lambda _, v: v * 2)
 
         class Child(Parent):
-            extended: RP[int] = Parent.extended.map(lambda v: v * 3)
+            extended: RP[int] = Parent.extended.map(lambda _, v: v * 3)
 
         fixture = Child()
 
@@ -98,7 +98,7 @@ class ReactiveValueTest(unittest.TestCase):
         class Bangles:
             song: RP[str] = rv.new_property()
 
-            hits: RV[str] = song.as_view().pipe(ops.map(lambda _: 1), ops.scan(lambda v1, v2: v1 + v2, 0))
+            hits: RV[str] = song.as_view().pipe(lambda _: (ops.map(lambda _: 1), ops.scan(lambda v1, v2: v1 + v2, 0)))
 
             def __init__(self, hit, *years_active, **members):
                 self.hit = hit
@@ -132,7 +132,7 @@ class ReactiveValueTest(unittest.TestCase):
         class Fixture:
             steeleye: RV[int] = rv.from_observable(rx.interval(1))
 
-            span: RV[str] = steeleye.map(lambda _: "All around my hat")
+            span: RV[str] = steeleye.map(lambda _, v: "All around my hat")
 
             def __init__(self, values, invokes):
                 self.invokes = invokes

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import TypeVar, Generic, Callable, Optional, Union, Any, Mapping
+from typing import TypeVar, Generic, Callable, Optional, Union, Any, Mapping, Tuple
 
 from returns.context import RequiresContext
 from returns.functions import raise_exception, identity
@@ -22,9 +22,10 @@ DATA_KEY = "_rv_data"
 
 META_KEY_PREFIX = "_rv_meta_"
 
+Modifier = Callable[[Observable], Observable]
+
 
 class ReactiveValue(Generic[T], ABC):
-
     __slots__ = ()
 
     def __init__(self, read_only=False) -> None:
@@ -59,11 +60,11 @@ class ReactiveValue(Generic[T], ABC):
 
         return self.context(obj)
 
-    def map(self, modifier: Callable[[T], Any]) -> ReactiveValue:
-        return self.pipe(ops.map(modifier))
+    def map(self, modifier: Callable[[Any, T], Any]) -> ReactiveValue:
+        return self.pipe(lambda o: (ops.map(lambda v: modifier(o, v)),))
 
     @abstractmethod
-    def pipe(self, *modifiers: Callable[[Observable], Observable]) -> ReactiveValue:
+    def pipe(self, modifiers: Callable[[Any], Tuple[Modifier, ...]]) -> ReactiveValue:
         pass
 
     @staticmethod

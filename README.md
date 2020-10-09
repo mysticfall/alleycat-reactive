@@ -263,7 +263,8 @@ class Counter:
 
     word: RP[str] = rv.new_property()
 
-    count: RV[str] = word.as_view().map(len).map(lambda c: f"The word has {c} letter(s)")
+    count: RV[str] = word.as_view().map(len).map(lambda o, c: f"The word has {c} letter(s)")
+    # The first argument 'o' is the current instance of Counter class.
 
 counter = Counter()
 
@@ -283,11 +284,12 @@ class CrowsCounter:
 
     animal: RP[str] = rv.new_property()
 
-    crows: RV[str] = animal.as_view().pipe(
+    # The first argument 'o' is the current instance of Counter class.
+    crows: RV[str] = animal.as_view().pipe(lambda o: (
         ops.map(str.lower),
         ops.filter(lambda v: v == "crow"),
         ops.map(lambda _: 1),
-        ops.scan(lambda v1, v2: v1 + v2, 0))
+        ops.scan(lambda v1, v2: v1 + v2, 0)))
 
 counting = CrowsCounter()
 

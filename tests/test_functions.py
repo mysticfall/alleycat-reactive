@@ -65,9 +65,9 @@ class FunctionsTest(unittest.TestCase):
         class MaryPoppins(ReactiveObject):
             song: RP[str] = rv.from_value("Supercalifragilisticexpialidocious")
 
-            info = song.as_view().pipe(
+            info = song.as_view().pipe(lambda _: (
                 ops.scan(lambda total, _: total + 1, 0),
-                ops.map(lambda count: f"Mary has sung {count} song(s)."))
+                ops.map(lambda count: f"Mary has sung {count} song(s).")))
 
         poppins = MaryPoppins()
 
@@ -128,7 +128,7 @@ class FunctionsTest(unittest.TestCase):
         class Fixture:
             value: RP[int] = rv.from_value(1)
 
-            doubled: RV[int] = value.as_view().map(lambda v: v * 2)
+            doubled: RV[int] = value.as_view().map(lambda _, v: v * 2)
 
             combined: RV[int] = rv.combine(value, doubled)(rx.combine_latest)
 
@@ -148,7 +148,7 @@ class FunctionsTest(unittest.TestCase):
         class Fixture:
             value: RP[int] = rv.from_value(1)
 
-            doubled: RV[int] = value.as_view().map(lambda v: v * 2)
+            doubled: RV[int] = value.as_view().map(lambda _, v: v * 2)
 
             combined: RV[int] = rv.combine_latest(value, doubled)(identity)
 
@@ -194,7 +194,7 @@ class FunctionsTest(unittest.TestCase):
         class Fixture:
             value: RP[int] = rv.from_value(1)
 
-            doubled: RV[int] = value.as_view().map(lambda v: v * 2)
+            doubled: RV[int] = value.as_view().map(lambda _, v: v * 2)
 
             zipped: RV[int] = rv.zip(value, doubled)(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))
 

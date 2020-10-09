@@ -7,6 +7,7 @@ from rx import Observable
 from rx import operators as ops
 
 from . import ReactiveValue
+from .value import Modifier
 
 T = TypeVar("T")
 
@@ -18,8 +19,8 @@ class ReactiveView(Generic[T], ReactiveValue[T]):
 
         self._init_value = init_value
 
-    def pipe(self, *modifiers: Callable[[Observable], Observable]) -> ReactiveView:
-        return ReactiveView(self.context.map(lambda o: o.pipe(*modifiers)), self.read_only)
+    def pipe(self, modifiers: Callable[[Any], Tuple[Modifier, ...]]) -> ReactiveView:
+        return ReactiveView(self.context.map(lambda o: o.pipe(*(modifiers(o)))), self.read_only)
 
     def with_instance(self) -> ReactiveView[Tuple[Any, T]]:
         context: RequiresContext[Observable, Any] = \

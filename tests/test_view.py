@@ -146,7 +146,7 @@ class ReactiveViewTest(unittest.TestCase):
         class Fixture:
             name: RV[str] = ReactiveView(RequiresContext.from_value(source), read_only=False)
 
-            song: RV[str] = name.map(lambda n: f"Who's afraid of a big bad {n}?")
+            song: RV[str] = name.map(lambda _, n: f"Who's afraid of a big bad {n}?")
 
         fixture = Fixture()
 
@@ -163,7 +163,7 @@ class ReactiveViewTest(unittest.TestCase):
         class Fixture:
             name: RV[str] = ReactiveView(RequiresContext.from_value(source), read_only=False)
 
-            song: RV[str] = name.pipe(ops.map(lambda n: f"Who's afraid of a big bad {n}?"))
+            song: RV[str] = name.pipe(lambda _: (ops.map(lambda n: f"Who's afraid of a big bad {n}?"),))
 
         fixture = Fixture()
 
@@ -183,7 +183,7 @@ class ReactiveViewTest(unittest.TestCase):
             times: RV[int] = ReactiveView(RequiresContext.from_value(source))
 
             lyric: RV[str] = times.with_instance().map(
-                lambda v: "Who's afraid of " + (", ".join(map(lambda _: v[0].name, range(v[1]))) + "?"))
+                lambda _, v: "Who's afraid of " + (", ".join(map(lambda _: v[0].name, range(v[1]))) + "?"))
 
         fixture = Fixture()
 

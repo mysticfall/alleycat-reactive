@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TypeVar, Generic, Callable, Optional, Any, cast
+from typing import TypeVar, Generic, Callable, Optional, Any, cast, Tuple
 
 import rx
 from returns.functions import identity
@@ -10,6 +10,7 @@ from rx import Observable
 from rx.subject import BehaviorSubject
 
 from . import ReactiveValue, ReactiveView
+from .value import Modifier
 
 T = TypeVar("T")
 
@@ -20,8 +21,8 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             self,
             init_value: Maybe[T] = Nothing,
             read_only=False,
-            modifier: Callable[[Observable], Observable] = identity,
-            validator: Callable[[T, Any], T] = lambda v, _: v) -> None:
+            modifier: Callable[[Any], Modifier] = lambda _: identity,
+            validator: Callable[[Any, T], T] = lambda _, v: v) -> None:
 
         super().__init__(read_only)
 
@@ -38,23 +39,24 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
         return self._validator
 
     @property
-    def modifier(self) -> Callable[[Observable], Observable]:
+    def modifier(self) -> Callable[[Any], Modifier]:
         return self._modifier
 
     def as_view(self) -> ReactiveView[T]:
         return ReactiveView(self.context, self.read_only)
 
-    def pipe(self, *modifiers: Callable[[Observable], Observable]) -> ReactiveProperty:
-        stack = [self.modifier] + list(modifiers)
+    def pipe(self, modifiers: Callable[[Any], Tuple[Modifier, ...]]) -> ReactiveProperty:
+        def stack(obj: Any):
+            return pipe_(*([self.modifier(obj)] + list(modifiers(obj))))
 
-        return ReactiveProperty(self.init_value, self.read_only, pipe_(*stack), self.validator)  # type:ignore
+        return ReactiveProperty(self.init_value, self.read_only, stack, self.validator)
 
-    def validate(self, validator: Callable[[T, Any], T]) -> ReactiveProperty[T]:
+    def validate(self, validator: Callable[[Any, T], T]) -> ReactiveProperty[T]:
         if validator is None:
             raise ValueError("Argument 'modifier' is required.")
 
-        def validate(v: T, obj: Any) -> T:
-            return validator(self.validator(v, obj), obj)
+        def validate(obj: Any, v: T) -> T:
+            return validator(obj, self.validator(obj, v))
 
         return ReactiveProperty(self.init_value, self.read_only, self.modifier, validate)
 
@@ -64,7 +66,7 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
                 self,
                 name: str,
                 init_value: Maybe[T],
-                modifier: Callable[[Observable], Observable],
+                modifier: Modifier,
                 validator: Callable[[T], T]):
 
             assert name is not None
@@ -121,9 +123,9 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
         assert self.name is not None
 
         def validate(v: T) -> T:
-            return self.validator(v, obj)
+            return self.validator(obj, v)
 
-        return self.PropertyData(self.name, self.init_value, self.modifier, validate)
+        return self.PropertyData(self.name, self.init_value, self.modifier(obj), validate)
 
     def _get_data(self, obj: Any) -> PropertyData:
         assert obj is not None

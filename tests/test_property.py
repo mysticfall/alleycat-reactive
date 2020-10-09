@@ -189,7 +189,7 @@ class ReactivePropertyTest(unittest.TestCase):
         class Fixture:
             name: RP[str] = ReactiveProperty(Some("wolf"))
 
-            song: RP[str] = name.map(lambda n: f"Who's afraid of a big bad {n}?")
+            song: RP[str] = name.map(lambda _, n: f"Who's afraid of a big bad {n}?")
 
         fixture = Fixture()
 
@@ -207,7 +207,8 @@ class ReactivePropertyTest(unittest.TestCase):
         class Fixture:
             name: RP[str] = ReactiveProperty(Some("wolf"))
 
-            song: RP[str] = name.pipe(ops.map(lambda n: f"Who's afraid of a big bad {n}?"), ops.map(str.upper))
+            song: RP[str] = name.pipe(
+                lambda _: (ops.map(lambda n: f"Who's afraid of a big bad {n}?"), ops.map(str.upper)))
 
         fixture = Fixture()
 
@@ -222,7 +223,7 @@ class ReactivePropertyTest(unittest.TestCase):
         self.assertEqual("WHO'S AFRAID OF A BIG BAD CAT?", fixture.song)
 
     def test_validate(self):
-        def validate(number: int, obj: Any) -> int:
+        def validate(obj: Any, number: int) -> int:
             min_value = getattr(obj, "min_value")
 
             if number < min_value:
@@ -233,7 +234,7 @@ class ReactivePropertyTest(unittest.TestCase):
         class Fixture:
             min_value: int = 0
 
-            value: RP[int] = ReactiveProperty(Some(1.2)).validate(lambda v, _: int(v))
+            value: RP[int] = ReactiveProperty(Some(1.2)).validate(lambda _, v: int(v))
 
             validated: RP[int] = value.validate(validate)
 
