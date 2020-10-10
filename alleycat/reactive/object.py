@@ -22,7 +22,7 @@ class ReactiveObject(Disposable):
         if self.disposed:
             raise RuntimeError("Cannot observe a disposed object.")
 
-        return rv.observe(self, name)
+        return rv.observe(self, name).pipe(ops.take_until(self.on_dispose))
 
     def dispose(self) -> None:
         if self.disposed:
