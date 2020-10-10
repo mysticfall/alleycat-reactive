@@ -35,6 +35,10 @@ def from_observable(value: Optional[Observable] = None, read_only=False) -> Reac
     return ReactiveView(init_value, read_only)
 
 
+def from_instance(value: Callable[[Any], Observable], read_only=False) -> ReactiveView:
+    return ReactiveView(RequiresContext(value), read_only)
+
+
 def combine(*values: ReactiveValue) -> Callable[[Callable[[VarArg(Observable)], Observable]], ReactiveView]:
     if len(values) == 0:
         raise ValueError("At least one argument is required.")

@@ -61,6 +61,19 @@ class FunctionsTest(unittest.TestCase):
         self.assertEqual(100, fixture.mary)
         self.assertEqual("Feed the Birds", fixture.poppins)
 
+    def test_from_instance(self):
+        class Leaves(ReactiveObject):
+            title: RV[str] = rv.from_instance(lambda o: rx.of(o.season)).map(lambda _, s: f"{s} Leaves")
+
+            def __init__(self, season: str):
+                super().__init__()
+
+                self.season = season
+
+        fixture = Leaves("Autumn")
+
+        self.assertEqual("Autumn Leaves", fixture.title)
+
     def test_observe(self):
         class MaryPoppins(ReactiveObject):
             song: RP[str] = rv.from_value("Supercalifragilisticexpialidocious")
