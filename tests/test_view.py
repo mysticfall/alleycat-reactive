@@ -4,7 +4,7 @@ from typing import Callable, Any
 import rx
 from returns.context import RequiresContext
 from rx import operators as ops
-from rx.subject import BehaviorSubject, Subject
+from rx.subject import BehaviorSubject
 
 from alleycat.reactive import ReactiveView, functions as rv, RV
 
@@ -148,10 +148,13 @@ class ReactiveViewTest(unittest.TestCase):
 
             song: RV[str] = name.map(lambda _, n: f"Who's afraid of a big bad {n}?")
 
+            instance: RV[Any] = name.map(lambda o, _: o)
+
         fixture = Fixture()
 
         self.assertEqual(False, Fixture.song.read_only)
         self.assertEqual("Who's afraid of a big bad wolf?", fixture.song)
+        self.assertEqual(fixture, fixture.instance)
 
         source.on_next("cat")
 
@@ -165,36 +168,17 @@ class ReactiveViewTest(unittest.TestCase):
 
             song: RV[str] = name.pipe(lambda _: (ops.map(lambda n: f"Who's afraid of a big bad {n}?"),))
 
+            instance: RV[Any] = name.pipe(lambda o: (ops.map(lambda _: o),))
+
         fixture = Fixture()
 
         self.assertEqual(False, Fixture.song.read_only)
         self.assertEqual("Who's afraid of a big bad wolf?", fixture.song)
+        self.assertEqual(fixture, fixture.instance)
 
         source.on_next("cat")
 
         self.assertEqual("Who's afraid of a big bad cat?", fixture.song)
-
-    def test_with_instance(self):
-        source = Subject()
-
-        class Fixture:
-            name: str = "a little good kitty"
-
-            times: RV[int] = ReactiveView(RequiresContext.from_value(source))
-
-            lyric: RV[str] = times.with_instance().map(
-                lambda _, v: "Who's afraid of " + (", ".join(map(lambda _: v[0].name, range(v[1]))) + "?"))
-
-        fixture = Fixture()
-
-        source.on_next(1)
-
-        self.assertEqual("Who's afraid of a little good kitty?", fixture.lyric)
-
-        fixture.name = "a big bad wolf"
-        source.on_next(3)
-
-        self.assertEqual("Who's afraid of a big bad wolf, a big bad wolf, a big bad wolf?", fixture.lyric)
 
     def test_extend(self):
         counter = BehaviorSubject(1)

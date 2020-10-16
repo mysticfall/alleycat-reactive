@@ -191,9 +191,12 @@ class ReactivePropertyTest(unittest.TestCase):
 
             song: RP[str] = name.map(lambda _, n: f"Who's afraid of a big bad {n}?")
 
+            instance: RP[Any] = name.map(lambda o, _: o)
+
         fixture = Fixture()
 
         self.assertEqual("Who's afraid of a big bad wolf?", fixture.song)
+        self.assertEqual(fixture, fixture.instance)
 
         fixture.song = "cat"
 
@@ -210,9 +213,12 @@ class ReactivePropertyTest(unittest.TestCase):
             song: RP[str] = name.pipe(
                 lambda _: (ops.map(lambda n: f"Who's afraid of a big bad {n}?"), ops.map(str.upper)))
 
+            instance: RP[Any] = name.pipe(lambda o: (ops.map(lambda _: o),))
+
         fixture = Fixture()
 
         self.assertEqual("WHO'S AFRAID OF A BIG BAD WOLF?", fixture.song)
+        self.assertEqual(fixture, fixture.instance)
 
         fixture.song = "cat"
 
