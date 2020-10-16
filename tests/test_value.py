@@ -1,11 +1,12 @@
+import gc
 import unittest
-from time import sleep
 
 import rx
 from returns.functions import identity
 from rx import operators as ops
 
 from alleycat.reactive import functions as rv, RP, RV
+from alleycat.reactive.value import DATA_KEY
 
 
 class ReactiveValueTest(unittest.TestCase):
@@ -126,39 +127,28 @@ class ReactiveValueTest(unittest.TestCase):
         self.assertEqual(2, bangles.hits)
 
     def test_del_hook(self):
-        spans = []
         calls = []
 
         class Fixture:
-            steeleye: RV[int] = rv.from_observable(rx.interval(1))
+            tick: RV[int] = rv.from_observable(rx.of(1)).map(lambda _, v: "tick!")
 
-            span: RV[str] = steeleye.map(lambda _, v: "All around my hat")
-
-            def __init__(self, values, invokes):
+            def __init__(self, invokes):
                 self.invokes = invokes
 
-                rv.observe(self, "span").subscribe(values.append)
+                rv.observe(self, "tick").subscribe(print)
 
             def __del__(self):
-                self.invokes.append("I will wear the green willow.")
+                data = getattr(self, DATA_KEY)
+                self.invokes.append(data["tick"].disposed)
 
         # noinspection PyUnusedLocal
-        fixture = Fixture(spans, calls)
-
-        sleep(2)
-
-        count = len(spans)
-
-        self.assertGreater(count, 0)
-        self.assertEqual([], calls)
+        fixture = Fixture(calls)
 
         del fixture
 
-        self.assertEqual(["I will wear the green willow."], calls)
+        gc.collect()
 
-        sleep(2)
-
-        self.assertEqual(count, len(spans))
+        self.assertEqual([True], calls)
 
 
 if __name__ == '__main__':
