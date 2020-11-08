@@ -19,18 +19,19 @@ class ReactiveObject(Disposable):
         self.on_dispose = rv.observe(self, "disposed").pipe(ops.filter(identity), ops.map(lambda _: None))
 
     def observe(self, name: str) -> Observable:
-        if self.disposed:
-            raise RuntimeError("Cannot observe a disposed object.")
+        try:
+            if self.disposed:
+                raise RuntimeError("Cannot observe a disposed object.")
+        except AttributeError:
+            pass
 
         return rv.observe(self, name).pipe(ops.take_until(self.on_dispose))
 
     def dispose(self) -> None:
-        if self.disposed:
-            raise RuntimeError("The object has already been disposed.")
+        if not self.disposed:
+            self.disposed = True
 
-        self.disposed = True
-
-        rv.dispose(self)
+            rv.dispose(self)
 
     def __enter__(self):
         return self

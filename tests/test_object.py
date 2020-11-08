@@ -88,8 +88,6 @@ class ReactiveObjectTest(unittest.TestCase):
         for key in ["value", "double"]:
             assert_error(lambda: self.fixture.observe(key), "Cannot observe a disposed object.")
 
-        assert_error(lambda: self.fixture.dispose(), "The object has already been disposed.")
-
         self.assertEqual(0, self.fixture.value)
         self.assertEqual(0, self.fixture.double)
 
