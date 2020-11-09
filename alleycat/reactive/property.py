@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TypeVar, Generic, Callable, Optional, Any, cast, Tuple
 
 import rx
+from returns import pipeline
 from returns.functions import identity
 from returns.maybe import Maybe, Nothing
-from returns.pipeline import pipe as pipe_
 from rx import Observable
 from rx.subject import BehaviorSubject
 
@@ -47,7 +47,9 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
 
     def pipe(self, modifiers: Callable[[Any], Tuple[Modifier, ...]]) -> ReactiveProperty:
         def stack(obj: Any):
-            return pipe_(*([self.modifier(obj)] + list(modifiers(obj))))
+            # FIXME: Not sure why both PyCharm and Mypy fails to resolve pipeline.pipe(). Should investigate later.
+            # noinspection PyUnresolvedReferences
+            return pipeline.pipe(*([self.modifier(obj)] + list(modifiers(obj))))  # type:ignore
 
         return ReactiveProperty(self.init_value, self.read_only, stack, self.validator)
 

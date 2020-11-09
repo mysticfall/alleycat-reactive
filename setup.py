@@ -13,7 +13,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/mysticfall/alleycat-reactive",
     packages=find_packages(),
-    install_requires=["returns==0.14.0", "rx==3.1.1"],
+    install_requires=["returns==0.15.0", "rx==3.1.1"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

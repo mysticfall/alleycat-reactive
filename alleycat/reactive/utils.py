@@ -16,9 +16,9 @@ def get_current_frame(depth: int = 1) -> Maybe[FrameType]:
         raise ValueError("Argument 'depth' must be zero or a positive integer.")
 
     def move_up(frame: Maybe[FrameType]) -> Maybe[FrameType]:
-        return frame.bind(lambda f: Maybe.from_value(f.f_back))
+        return frame.bind(lambda f: Maybe.from_optional(f.f_back))
 
-    return flow(Maybe.from_value(inspect.currentframe()), *[move_up for _ in range(depth)])  # type:ignore
+    return flow(Maybe.from_optional(inspect.currentframe()), *[move_up for _ in range(depth)])  # type:ignore
 
 
 def get_property_reference(frame: FrameType) -> Maybe[Tuple[Any, str]]:

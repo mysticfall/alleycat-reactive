@@ -3,6 +3,7 @@ from typing import Callable, Any
 
 import rx
 from returns.context import RequiresContext
+from returns.iterables import Fold
 from rx import operators as ops
 from rx.subject import BehaviorSubject
 
@@ -188,10 +189,11 @@ class ReactiveViewTest(unittest.TestCase):
 
             doubled: RV[int] = ReactiveView(value.context.map(lambda c: c.pipe(ops.map(lambda v: v * 2))))
 
-            result: RV[int] = ReactiveView(RequiresContext
-                                           .from_iterable([v.context for v in [value, doubled]])
-                                           .map(lambda v: rx.combine_latest(*v))
-                                           .map(lambda o: o.pipe(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))))
+            # noinspection PyTypeChecker
+            result: RV[int] = ReactiveView(
+                Fold.collect([v.context for v in [value, doubled]], RequiresContext.from_value(()))
+                    .map(lambda v: rx.combine_latest(*v))
+                    .map(lambda o: o.pipe(ops.map(lambda v: f"{v[0]} * 2 = {v[1]}"))))
 
         fixture = Fixture()
 

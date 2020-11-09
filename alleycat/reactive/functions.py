@@ -4,6 +4,7 @@ from typing import TypeVar, Optional, Callable, Any, Sequence
 import rx
 from mypy_extensions import VarArg
 from returns.context import RequiresContext
+from returns.iterables import Fold
 from returns.maybe import Maybe, Nothing
 from rx import Observable
 
@@ -25,12 +26,12 @@ def new_view(read_only=False) -> ReactiveView:
 
 
 def from_value(value: Optional[T], read_only=False) -> ReactiveProperty[T]:
-    return ReactiveProperty(Maybe.from_value(value), read_only)
+    return ReactiveProperty(Maybe.from_optional(value), read_only)
 
 
 def from_observable(value: Optional[Observable] = None, read_only=False) -> ReactiveView:
     init_value: RequiresContext[Observable, Any] = \
-        RequiresContext(lambda _: Maybe.from_value(value).value_or(rx.empty()))
+        RequiresContext(lambda _: Maybe.from_optional(value).value_or(rx.empty()))
 
     return ReactiveView(init_value, read_only)
 
@@ -47,7 +48,9 @@ def combine(*values: ReactiveValue) -> Callable[[Callable[[VarArg(Observable)], 
         if modifier is None:
             raise ValueError("Argument 'modifier' is required.")
 
-        init_value = RequiresContext.from_iterable([v.context for v in values]).map(lambda v: modifier(*v))
+        # noinspection PyTypeChecker
+        init_value = Fold.collect([v.context for v in values], RequiresContext.from_value(())) \
+            .map(lambda v: modifier(*v))
 
         return ReactiveView(init_value)
 
@@ -73,8 +76,9 @@ def _combine_with(values: Sequence[ReactiveValue], combinator: Callable[[VarArg(
         raise ValueError("Argument 'values' is required.")
 
     def process(modifier: Callable[[Observable], Observable]):
-        init_value = RequiresContext.from_iterable([v.context for v in values]).map(
-            lambda v: combinator(*v)).map(modifier)
+        # noinspection PyTypeChecker
+        init_value = Fold.collect([v.context for v in values], RequiresContext.from_value(())) \
+            .map(lambda v: combinator(*v)).map(modifier)
 
         return ReactiveView(init_value)
 
@@ -95,7 +99,7 @@ def observe(obj, name: Optional[str] = None) -> Observable:
         return process
 
     (target, key) = Maybe \
-        .from_value(name) \
+        .from_optional(name) \
         .map(lambda n: (obj, n)) \
         .or_else_call(infer_name(utils.get_property_reference, 3))
 

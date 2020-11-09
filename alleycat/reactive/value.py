@@ -32,7 +32,7 @@ class ReactiveValue(Generic[T], ABC):
         self._name: Optional[str] = None
         self._read_only = read_only
 
-        data: RequiresContext[Any, ReactiveValue.Data[T]] = RequiresContext(lambda obj: self._get_data(obj))
+        data: RequiresContext[ReactiveValue.Data[T], Any] = RequiresContext(lambda obj: self._get_data(obj))
 
         # Declare separately to prevent an object allocation with every value/observable reference.
         self._context = data.map(lambda c: c.observable)
@@ -144,8 +144,7 @@ class ReactiveValue(Generic[T], ABC):
                      modifier: Callable[[Observable], Observable] = identity):
             assert observable is not None
 
-            self.name = Maybe.from_value(name)
-
+            self._name = Maybe.from_optional(name)
             self._value: Optional[U] = None
 
             self._initialized = False
@@ -162,6 +161,10 @@ class ReactiveValue(Generic[T], ABC):
 
             self._cancel_update = self.observable.subscribe(update, raise_exception)
             self._connection = self._observable.connect()  # type:ignore
+
+        @property
+        def name(self) -> Maybe[str]:
+            return self._name
 
         def label(self) -> str:
             return self.name.value_or("(anonymous)")
@@ -244,9 +247,8 @@ class ReactiveValue(Generic[T], ABC):
             return partial(initialize, v, self.name, new_instance)
 
         return safe(getattr)(obj, DATA_KEY) \
-            .rescue(init_container) \
-            .bind(lambda v: safe(lambda: v[self.name])().rescue(init_data(v))) \
-            .fix(raise_exception) \
+            .lash(init_container) \
+            .bind(lambda v: safe(lambda: v[self.name])().lash(init_data(v))) \
             .unwrap()
 
     @abstractmethod
