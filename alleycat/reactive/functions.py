@@ -21,7 +21,7 @@ def new_property(read_only=False) -> ReactiveProperty:
     return ReactiveProperty(Nothing, read_only)
 
 
-def new_view(read_only=False) -> ReactiveView:
+def new_view(read_only=True) -> ReactiveView:
     return ReactiveView(RequiresContext(lambda _: rx.empty()), read_only)
 
 
@@ -29,14 +29,14 @@ def from_value(value: Optional[T], read_only=False) -> ReactiveProperty[T]:
     return ReactiveProperty(Maybe.from_optional(value), read_only)
 
 
-def from_observable(value: Optional[Observable] = None, read_only=False) -> ReactiveView:
+def from_observable(value: Optional[Observable] = None, read_only=True) -> ReactiveView:
     init_value: RequiresContext[Observable, Any] = \
         RequiresContext(lambda _: Maybe.from_optional(value).value_or(rx.empty()))
 
     return ReactiveView(init_value, read_only)
 
 
-def from_instance(value: Callable[[Any], Observable], read_only=False) -> ReactiveView:
+def from_instance(value: Callable[[Any], Observable], read_only=True) -> ReactiveView:
     return ReactiveView(RequiresContext(value), read_only)
 
 
