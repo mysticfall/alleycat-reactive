@@ -1,15 +1,13 @@
 from types import FrameType
-from typing import TypeVar, Optional, Callable, Any, Sequence
+from typing import Any, Callable, Optional, Sequence, Tuple, TypeVar
 
 import rx
-from mypy_extensions import VarArg
 from returns.context import RequiresContext
 from returns.iterables import Fold
 from returns.maybe import Maybe, Nothing
 from rx import Observable
 
-from . import ReactiveValue
-from . import utils
+from . import ReactiveValue, utils
 from .property import ReactiveProperty
 from .value import DATA_KEY
 from .view import ReactiveView
@@ -40,17 +38,17 @@ def from_instance(value: Callable[[Any], Observable], read_only=True) -> Reactiv
     return ReactiveView(RequiresContext(value), read_only)
 
 
-def combine(*values: ReactiveValue) -> Callable[[Callable[[VarArg(Observable)], Observable]], ReactiveView]:
+def combine(*values: ReactiveValue) -> Callable[[Callable[[Tuple[Observable, ...]], Observable]], ReactiveView]:
     if len(values) == 0:
         raise ValueError("At least one argument is required.")
 
-    def process(modifier: Callable[[VarArg(Observable)], Observable]):
+    def process(modifier: Callable[[Tuple[Observable, ...]], Observable]):
         if modifier is None:
             raise ValueError("Argument 'modifier' is required.")
 
         # noinspection PyTypeChecker
         init_value = Fold.collect([v.context for v in values], RequiresContext.from_value(())) \
-            .map(lambda v: modifier(*v))
+            .map(lambda v: modifier(*v))  # type:ignore
 
         return ReactiveView(init_value)
 
@@ -58,27 +56,29 @@ def combine(*values: ReactiveValue) -> Callable[[Callable[[VarArg(Observable)], 
 
 
 def combine_latest(*values: ReactiveValue) -> Callable[[Callable[[Observable], Observable]], ReactiveView]:
-    return _combine_with(values, rx.combine_latest)
+    # noinspection PyTypeChecker
+    return _combine_with(values, rx.combine_latest)  # type:ignore
 
 
 def merge(*values: ReactiveValue) -> ReactiveView:
-    return combine(*values)(rx.merge)
+    # noinspection PyTypeChecker
+    return combine(*values)(rx.merge)  # type:ignore
 
 
 # noinspection PyShadowingBuiltins
 def zip(*values: ReactiveValue) -> Callable[[Callable[[Observable], Observable]], ReactiveView]:
-    return _combine_with(values, rx.zip)
+    # noinspection PyTypeChecker
+    return _combine_with(values, rx.zip)  # type:ignore
 
 
-def _combine_with(values: Sequence[ReactiveValue], combinator: Callable[[VarArg(Observable)], Observable]) -> \
-        Callable[[Callable[[Observable], Observable]], ReactiveView]:
+def _combine_with(values: Sequence[ReactiveValue], combinator: Callable[[Tuple[Observable, ...]], Observable]):
     if values is None:
         raise ValueError("Argument 'values' is required.")
 
     def process(modifier: Callable[[Observable], Observable]):
         # noinspection PyTypeChecker
         init_value = Fold.collect([v.context for v in values], RequiresContext.from_value(())) \
-            .map(lambda v: combinator(*v)).map(modifier)
+            .map(lambda v: combinator(*v)).map(modifier)  # type:ignore
 
         return ReactiveView(init_value)
 
