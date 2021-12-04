@@ -113,10 +113,10 @@ class ReactiveProperty(Generic[T], ReactiveValue[T]):
             return self._validator
 
         def dispose(self) -> None:
-            assert self._property is not None
-
             self._check_disposed()
-            self._property.on_completed()
+
+            if self._property:
+                self._property.on_completed()
 
             super().dispose()
 
