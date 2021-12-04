@@ -1,8 +1,7 @@
 from typing import TypeVar
 
 from returns.functions import identity
-from rx import Observable
-from rx import operators as ops
+from rx import Observable, operators as ops
 from rx.core.typing import Disposable
 
 from alleycat.reactive import functions as rv
@@ -13,10 +12,9 @@ T = TypeVar("T")
 class ReactiveObject(Disposable):
     disposed = rv.from_value(False)
 
-    def __init__(self):
-        super().__init__()
-
-        self.on_dispose = rv.observe(self, "disposed").pipe(ops.filter(identity), ops.map(lambda _: None))
+    @property
+    def on_dispose(self) -> Observable:
+        return rv.observe(self, "disposed").pipe(ops.filter(identity), ops.map(lambda _: None))
 
     def observe(self, name: str) -> Observable:
         try:
